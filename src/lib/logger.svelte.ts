@@ -177,6 +177,7 @@ interface CallableLogger extends Logger {
 	(...args: any[]): void;
 	migrator: ScopedLogger;
 	db: ScopedLogger;
+	app: ScopedLogger;
 }
 
 // Create a callable logger by using a Proxy
@@ -202,7 +203,9 @@ log.setLevel('debug');
 // Attach scoped loggers to the main instance with custom colors
 log.migrator = log.scope('migrator', '#10B981'); // Green
 log.migrator.setLevel('info');
-log.db = log.scope('db', '#8B5CF6'); // Purple
+log.db = log.scope('db', '#8B5CF6');
 log.db.setLevel('info');
+log.app = log.scope('app', '#cf2d5b');
+log.app.setLevel('debug');
 
 export default log;

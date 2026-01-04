@@ -42,19 +42,6 @@ class DatabaseService {
 		}
 	}
 
-	private async runMigrations(db_name: string = db_name_default) {
-		if (!this.dbConnection || !this.drizzle_db) return;
-		log.migrator.info('Applying Migrations...');
-		try {
-			const migrations = getMigrations();
-			await this.applyMigrations(migrations);
-			log.migrator.info('Migrations applied successfully!');
-		} catch (error) {
-			console.error('Migration failed:', error);
-			throw error;
-		}
-	}
-
 	private async checkDB() {
 		if (!this.dbConnection) return;
 		log.db.debug('Verifying database...');
@@ -170,105 +157,6 @@ class DatabaseService {
 		const hashBuffer = await crypto.subtle.digest('SHA-256', data);
 		const hashArray = Array.from(new Uint8Array(hashBuffer));
 		return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-	}
-
-	private async applyMigrations(migrations: Array<{ id: string; hash: string; sql: string[] }>) {
-		if (!this.dbConnection) return;
-
-		// console.log('🔧 Starting migration process...');
-		// console.log(`📦 Found ${migrations.length} migration files`);
-
-		try {
-			// Step 1: Create migrations table
-			console.log('📋 Creating migrations table...');
-			await this.dbConnection.execute(`
-                CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    hash TEXT NOT NULL UNIQUE,
-                    created_at INTEGER NOT NULL
-                );
-            `);
-
-			// Step 2: Verify migrations table exists
-			const tableCheck = await this.dbConnection.query(
-				"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
-			);
-			//console.log('✅ Migrations table exists:', tableCheck.values);
-
-			// Step 3: Get applied migrations
-			//console.log('📖 Reading applied migrations...');
-			const result = await this.dbConnection.query('SELECT hash FROM __drizzle_migrations');
-			//console.log('Raw query result:', JSON.stringify(result, null, 2));
-
-			const appliedMigrations = new Set(result.values?.map((row) => row.hash as string) || []);
-			console.log(
-				`✓ Found ${appliedMigrations.size} already applied migrations:`,
-				Array.from(appliedMigrations)
-			);
-
-			// Step 4: Apply pending migrations
-			for (const migration of migrations) {
-				if (appliedMigrations.has(migration.hash)) {
-					console.log(`⏭️  Skipping ${migration.id} (already applied)`);
-					continue;
-				}
-
-				console.log(`\n🔨 Applying migration: ${migration.id}`);
-				console.log(`   Hash: ${migration.hash}`);
-				console.log(`   Statements: ${migration.sql.length}`);
-
-				try {
-					// Execute each SQL statement
-
-					for (const statement of migration.sql) {
-						if (statement.trim()) {
-							console.log(`   Executing statement ...`);
-							console.log(`   SQL: ${statement.substring(0, 100)}...`);
-							await this.dbConnection.execute(statement);
-						}
-					}
-
-					// Record migration as applied
-					console.log(`   Recording migration in tracking table...`);
-					const insertResult = await this.dbConnection.run(
-						'INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)',
-						[migration.hash, Date.now()]
-					);
-					console.log(`   Insert result:`, insertResult);
-
-					// Verify it was actually inserted
-					const verifyResult = await this.dbConnection.query(
-						'SELECT * FROM __drizzle_migrations WHERE hash = ?',
-						[migration.hash]
-					);
-					console.log(`   Verification:`, verifyResult.values);
-
-					console.log(`✅ Migration ${migration.id} applied successfully\n`);
-				} catch (error) {
-					console.error(`❌ Migration ${migration.id} failed:`, error);
-					throw error;
-				}
-			}
-
-			// Step 5: Final verification
-			console.log('\n📊 Final migration status:');
-			const finalResult = await this.dbConnection.query(
-				'SELECT id, hash, created_at FROM __drizzle_migrations ORDER BY id'
-			);
-			console.log('All applied migrations:', finalResult.values);
-
-			// Step 6: Verify created tables
-			const tablesResult = await this.dbConnection.query(
-				"SELECT * FROM sqlite_master WHERE type='table' ORDER BY name"
-			);
-			console.log(
-				'All tables in database:',
-				tablesResult.values?.map((row) => row.name)
-			);
-		} catch (error) {
-			console.error('❌ Migration process failed:', error);
-			throw error;
-		}
 	}
 
 	get db() {

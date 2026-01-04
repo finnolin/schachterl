@@ -4,6 +4,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { defineCustomElements } from 'jeep-sqlite/loader';
 	import { databaseService } from '$lib/local/db';
+	import { app_context } from '$lib/local/app/app-context.svelte';
 	defineCustomElements();
 	let { children } = $props();
 	let isReady = $state(false);
@@ -11,6 +12,7 @@
 	onMount(async () => {
 		try {
 			await databaseService.initialize();
+			await app_context.initialize();
 			isReady = true;
 		} catch (error) {
 			console.error('Failed to initialize database:', error);
