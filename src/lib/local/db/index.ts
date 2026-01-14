@@ -22,13 +22,16 @@ class DatabaseService {
 
 			if (platform === 'web') {
 				log.db.debug('Platform Web: Initialze Store...');
-				await sqliteService.initWebStore(); // now does everything
+				await sqliteService.initWebStore();
 			}
 
 			this.dbConnection = await sqliteService.openDatabase(db_name, version, false);
 			this.drizzle_db = createCapacitorDrizzle(this.dbConnection);
 
+			// Check if database is properly initialized
 			await this.checkDB();
+
+			// Check if current schema is applied
 			await this.checkSchemaHead();
 
 			if (platform === 'web') {
