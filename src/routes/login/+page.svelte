@@ -1,0 +1,90 @@
+<script lang="ts">
+	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { getAuthClient } from '$lib/local/auth';
+	const auth_client = getAuthClient();
+	let server_address: string = $state('');
+	if (app_context.server_address) {
+		server_address = app_context.server_address;
+	}
+
+	let form_data = $state({
+		email: '',
+		password: '',
+		name: ''
+	});
+	async function register() {
+		const { data, error } = await auth_client.signUp.email(
+			{
+				email: form_data.email, // user email address
+				password: form_data.password, // user password -> min 8 characters by default
+				name: form_data.name // user display name
+			},
+			{
+				onRequest: (ctx) => {
+					console.log('requesting');
+				},
+				onSuccess: (ctx) => {
+					console.log('success');
+					const auth_token = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
+					// Store the token securely (e.g., in localStorage)
+					if (auth_token && app_context.is_tauri) {
+						console.log(auth_token);
+						localStorage.setItem('bearer_token', auth_token);
+					}
+
+					//redirect to the dashboard or sign in page
+				},
+				onError: (ctx) => {
+					// display the error message
+					alert(ctx.error.message);
+				}
+			}
+		);
+	}
+</script>
+
+{#if app_context.is_tauri}
+	{#if app_context.server_address}
+		<div class="flex flex-col gap-2">
+			Server Set: {app_context.server_address}
+			<button
+				class="cursor-pointer"
+				onclick={() => {
+					app_context.clearServer();
+				}}>
+				Clear
+			</button>
+		</div>
+	{:else}
+		<div class="flex flex-col gap-2">
+			<input
+				type="text"
+				id="server_address"
+				name="server_address"
+				placeholder="Enter you server address here"
+				bind:value={server_address} />
+			<button
+				class="cursor-pointer"
+				onclick={() => {
+					app_context.setServer(server_address);
+				}}>
+				Set
+			</button>
+		</div>
+	{/if}
+{/if}
+
+{#if !app_context.is_tauri || (app_context.is_tauri && app_context.server_address)}
+	<div class="flex flex-col gap-1">
+		<input class="border border-amber-600" bind:value={form_data.email} />
+		<input class="border border-amber-600" bind:value={form_data.name} />
+		<input class="border border-amber-600" bind:value={form_data.password} />
+		<button
+			class="cursor-pointer"
+			onclick={() => {
+				register();
+			}}>
+			Register
+		</button>
+	</div>
+{/if}

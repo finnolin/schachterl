@@ -1,31 +1,60 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { defineCustomElements } from 'jeep-sqlite/loader';
-	import { databaseService } from '$lib/local/db';
+	import { onMount } from 'svelte';
+	import { local_db } from '$lib/local/db';
 	import { app_context } from '$lib/local/app/app-context.svelte';
-	defineCustomElements();
-	let { children } = $props();
-	let isReady = $state(false);
+	import { initializeAuthClient, useSession, getAuthClient } from '$lib/local/auth';
+	import log from '$lib/logger.svelte';
 
+	let { children } = $props();
+	let is_ready = $state(false);
+	let session = $state<ReturnType<typeof useSession>>();
+	$effect(() => {
+		if ($session?.data) {
+			log.info($session.data.session);
+		}
+	});
 	onMount(async () => {
 		try {
-			await databaseService.initialize();
+			await local_db.initialize();
 			await app_context.initialize();
-			isReady = true;
+			initializeAuthClient();
+			session = useSession();
+			const auth_client = getAuthClient();
+			const token = localStorage.getItem('bearer_token');
+			// if (token) {
+			// 	const tauri_session = await auth_client.getSession({
+			// 		fetchOptions: {
+			// 			headers: {
+			// 				Authorization: `Bearer ${token}`
+			// 			}
+			// 		}
+			// 	});
+			// 	log.debug('tauri_session', tauri_session);
+			// }
+			//console.log($session?.data);
+
+			is_ready = true;
 		} catch (error) {
 			console.error('Failed to initialize database:', error);
 		}
 	});
 </script>
 
-<!-- jeep-sqlite is a Web Component that acts as a bridge between JavaScript and native SQLite, and Web Components only exist when they’re attached to the DOM. -->
-<jeep-sqlite autoSave="true"></jeep-sqlite>
-
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-{#if isReady}
+<div class="flex w-full h-10 p-2 gap-2">
+	{#if $session?.data}
+		have session: {$session.data.user?.email}
+	{:else}
+		no session
+	{/if}
+	<a href="/">Home</a>
+	<a href="/login">Login</a>
+</div>
+
+{#if is_ready}
 	{@render children()}
 {:else}
 	<div>Setting up database...</div>

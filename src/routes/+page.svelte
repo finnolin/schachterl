@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { databaseService } from '$lib/local/db';
+	import { local_db } from '$lib/local/db';
 
 	// let test = $derived(db.test());
 	let refresh = $state(0);
-	const db = databaseService.db;
-	const schema = databaseService.schema;
+	const db = local_db.db;
+	const schema = local_db.schema;
 
 	async function addUser() {
 		await db.insert(schema.user).values({ name: 'test' });

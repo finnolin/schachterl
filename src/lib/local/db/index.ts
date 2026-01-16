@@ -1,41 +1,55 @@
 // src/lib/local/db/index.ts
-import { sqliteService } from './SQLiteService';
-import { createCapacitorDrizzle } from './capacitor-drizzle';
-import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { createProxyTauri, createProxySQLocal } from './proxy';
 import { desc, eq } from 'drizzle-orm';
+import { type SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
 import * as schema from './schema';
+import Database from '@tauri-apps/plugin-sql';
+import { isTauri } from '@tauri-apps/api/core';
+
+import { SQLocal } from 'sqlocal';
 import { getMigrations } from './utils';
 import journal from './drizzle/migrations/meta/_journal.json';
 
 // example-usage.svelte.ts
 import log from '$lib/logger.svelte';
-const db_name_default = 'local_db';
+const db_name_default = 'local';
+const db_name_string = 'sqlite:' + db_name_default + '.db';
+
+async function getTauriDb(db_name: string = db_name_default) {
+	return await Database.load(db_name_string);
+}
+function getSQLocalDb(db_name: string = db_name_default) {
+	return new SQLocal(db_name_string);
+}
 
 class DatabaseService {
-	private dbConnection: SQLiteDBConnection | null = null;
+	private db_connection: Database | SQLocal | undefined;
 	private drizzle_schema = schema;
-	private drizzle_db: ReturnType<typeof createCapacitorDrizzle> | null = null;
+	private drizzle_db: SqliteRemoteDatabase<typeof schema> | null = null;
 
-	async initialize(db_name: string = db_name_default, version: number = 1) {
+	async initialize(db_name: string = db_name_default) {
+		if (isTauri()) {
+			console.log('is tauri');
+			this.db_connection = await getTauriDb();
+			this.drizzle_db = createProxyTauri(db_name_string);
+		} else {
+			this.db_connection = getSQLocalDb();
+			this.drizzle_db = createProxySQLocal(db_name_string);
+		}
+
 		try {
-			const platform = sqliteService.getPlatform();
-
-			if (platform === 'web') {
-				log.db.debug('Platform Web: Initialze Store...');
-				await sqliteService.initWebStore();
-			}
-
-			this.dbConnection = await sqliteService.openDatabase(db_name, version, false);
-			this.drizzle_db = createCapacitorDrizzle(this.dbConnection);
-
 			// Check if database is properly initialized
-			await this.checkDB();
-
+			const system_tables_exist = await this.checkDB();
+			if (!system_tables_exist) {
+				log.db.warn('System tables not found...');
+				await this.applyMigrations();
+			} else {
+				log.db.info('System tables found.');
+			}
 			// Check if current schema is applied
-			await this.checkSchemaHead();
-
-			if (platform === 'web') {
-				await sqliteService.saveToStore(db_name);
+			const db_updated = await this.checkSchemaHead();
+			if (!db_updated) {
+				await this.applyMigrations();
 			}
 
 			return this.drizzle_db;
@@ -46,50 +60,96 @@ class DatabaseService {
 	}
 
 	private async checkDB() {
-		if (!this.dbConnection) return;
+		if (!this.drizzle_db) return;
 		log.db.debug('Verifying database...');
+		if (isTauri()) {
+			const sql_db = this.db_connection as Database;
+			//const sql_db = await getTauriDb();
+			const query = await sql_db.select<{ name: string }[]>(
+				"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
+			);
+			console.log(query);
 
-		const table_check = await this.dbConnection.query(
-			"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
-		);
-		if (table_check.values && table_check.values.length > 0) {
-			log.db.info('Database OK');
-			return;
+			if (query.length > 0) {
+				return true;
+			}
+		} else {
+			const sql_db = this.db_connection as SQLocal;
+			const query = await sql_db.sql(
+				"SELECT * FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
+			);
+			if (query.length > 0) {
+				return true;
+			}
 		}
-		log.db.warn('System tables not found...');
-		await this.prepareDatabase();
+		return false;
+		// const table_check = await this.db_connection?.execute(
+		// 	"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
+		// );
+		// if (table_check.values && table_check.values.length > 0) {
+		// 	log.db.info('Database OK');
+		// 	return;
+		// }
+		//log.db.warn('System tables not found...');
+		//await this.prepareDatabase();
 	}
 
 	private async prepareDatabase() {
-		if (!this.dbConnection) return;
-		await this.applyMigrations2();
+		// if (!this.dbConnection) return;
+		// await this.applyMigrations2();
+	}
+
+	private async executeStatement(statement_string: string) {
+		if (isTauri()) {
+			console.log('Connection object:', this.db_connection);
+			console.log(
+				'Connection methods:',
+				Object.getOwnPropertyNames(Object.getPrototypeOf(this.db_connection))
+			);
+			const sql_db = this.db_connection as Database;
+			//const sql_db = await getTauriDb();
+			await sql_db.execute(statement_string);
+		} else {
+			console.log('test');
+
+			const sql_db = this.db_connection as SQLocal;
+			const query = await sql_db.sql(statement_string);
+			console.log(query);
+
+			if (query.length > 0) {
+				return true;
+			}
+		}
 	}
 
 	private async checkSchemaHead() {
 		if (!this.drizzle_db) return;
 		log.migrator.debug('Checking schema...');
 		const expected_schema_head = journal.entries[journal.entries.length - 1].tag;
-		const applied_schema_head = await this.drizzle_db
-			.select({ tag: this.schema.drizzle_migrations.tag })
-			.from(this.schema.drizzle_migrations)
-			.orderBy(desc(this.schema.drizzle_migrations.id))
-			.limit(1);
-
-		if (applied_schema_head[0]?.tag === expected_schema_head) {
-			log.migrator.info(`Schema up-to-date (head: ${expected_schema_head})`);
-			return;
+		try {
+			const applied_schema_head = await this.drizzle_db
+				.select({ tag: this.schema.drizzle_migrations.tag })
+				.from(this.schema.drizzle_migrations)
+				.orderBy(desc(this.schema.drizzle_migrations.id))
+				.limit(1);
+			if (applied_schema_head[0]?.tag === expected_schema_head) {
+				log.migrator.info(`Schema up-to-date (head: ${expected_schema_head})`);
+				return true;
+			}
+			log.migrator.warn(
+				`Schema out-of-date or inconsistent. Expected head: ${expected_schema_head}, ` +
+					`applied head: ${applied_schema_head[0]?.tag ?? 'none'}`
+			);
+			return false;
+		} catch (error) {
+			log.migrator.error(error);
+			return false;
 		}
-		log.migrator.warn(
-			`Schema out-of-date or inconsistent. Expected head: ${expected_schema_head}, ` +
-				`applied head: ${applied_schema_head[0]?.tag ?? 'none'}`
-		);
-		await this.applyMigrations2();
 	}
-	private async applyMigrations2() {
-		if (!this.dbConnection || !this.drizzle_db) return;
+	private async applyMigrations() {
+		if (!this.drizzle_db) return;
 		for (const migration of journal.entries) {
 			log.migrator.debug('Processing migration: ' + migration.tag);
-
 			let applied_migration: schema.Migration | undefined;
 			try {
 				const [result] = await this.drizzle_db
@@ -105,13 +165,12 @@ class DatabaseService {
 				log.migrator.info(migration.tag, 'already exists.');
 				continue;
 			}
-
 			const drizzle_migration = await this.getSQLStatements(migration.tag);
 			try {
 				for (const statement of drizzle_migration.sql) {
 					if (statement.trim()) {
 						log.migrator.debug(`Statement: ${statement.substring(0, 100)}...`);
-						await this.dbConnection.execute(statement);
+						await this.executeStatement(statement);
 					}
 				}
 				await this.drizzle_db
@@ -177,12 +236,12 @@ class DatabaseService {
 	}
 
 	async close(db_name: string = db_name_default) {
-		if (this.dbConnection) {
-			await sqliteService.closeDatabase(db_name, false);
-		}
-		this.dbConnection = null;
-		this.drizzle_db = null;
+		// if (this.dbConnection) {
+		// 	await sqliteService.closeDatabase(db_name, false);
+		// }
+		// this.dbConnection = null;
+		// this.drizzle_db = null;
 	}
 }
 
-export const databaseService = new DatabaseService();
+export const local_db = new DatabaseService();

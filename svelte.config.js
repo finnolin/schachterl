@@ -1,5 +1,5 @@
 import adapter_static from '@sveltejs/adapter-static';
-import adapter_node from '@sveltejs/adapter-node';
+//import adapter_node from '@sveltejs/adapter-node';
 
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
@@ -14,6 +14,7 @@ const config = {
 		adapter: adapter_static({
 			fallback: 'index.html'
 		}),
+		prerender: { entries: ['*'], handleHttpError: 'warn' },
 		experimental: { remoteFunctions: true }
 	}
 };

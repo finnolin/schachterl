@@ -8,6 +8,9 @@ node_modules
 /.svelte-kit
 /build
 /android
+/pgdata
+/pgdumps
+/pginit
 
 # OS
 .DS_Store

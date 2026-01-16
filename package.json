@@ -4,8 +4,10 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "npm run copy:sql:wasm && vite dev",
-		"build:web": "npm run copy:sql:wasm && vite build",
+		"dev": "vite dev --port 5173",
+		"dev:tauri": "vite dev --port 5174",
+		"build": "vite build",
+		"build:tauri": "cross-env TAURI_BUILD=true BETTER_AUTH_SECRET=dummy-secret-for-build vite build",
 		"build:native": "npm run remove:sql:wasm && vite build",
 		"copy:sql:wasm": "copyfiles -u 3 node_modules/sql.js/dist/sql-wasm.wasm static/assets",
 		"remove:sql:wasm": "rimraf static/assets/sql-wasm.wasm",
@@ -15,8 +17,10 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
+		"tauri": "tauri",
 		"db:gen:local": "drizzle-kit generate --config=./src/lib/local/db/drizzle/config.ts",
-		"db:gen:server": "drizzle-kit generate --config=./src/lib/server/db/drizzle.config.ts"
+		"db:gen:server": "drizzle-kit generate --config=./src/lib/server/db/drizzle/config.ts",
+		"db:mig:server": "drizzle-kit migrate --config=./src/lib/server/db/drizzle/config.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
@@ -27,8 +31,10 @@
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
+		"@tauri-apps/cli": "^2.9.6",
 		"@types/node": "^22",
 		"copyfiles": "^2.4.1",
+		"cross-env": "^10.1.0",
 		"drizzle-kit": "^0.31.8",
 		"eslint": "^9.39.1",
 		"eslint-config-prettier": "^10.1.8",
@@ -46,13 +52,11 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
-		"@capacitor-community/sqlite": "^7.0.2",
-		"@capacitor/android": "^8.0.0",
-		"@capacitor/cli": "^8.0.0",
-		"@capacitor/core": "^8.0.0",
+		"@tauri-apps/plugin-sql": "^2.3.1",
+		"better-auth": "^1.4.13",
 		"drizzle-orm": "^0.45.1",
-		"jeep-sqlite": "^2.8.0",
-		"sql.js": "^1.12.0",
+		"postgres": "^3.4.8",
+		"sqlocal": "^0.16.0",
 		"uuid": "^13.0.0"
 	}
 }
