@@ -2,9 +2,9 @@
 	import { app_context } from '$lib/local/app/app-context.svelte';
 	import { getAuthClient } from '$lib/local/auth';
 	const auth_client = getAuthClient();
-	let server_address: string = $state('');
-	if (app_context.server_address) {
-		server_address = app_context.server_address;
+	let server_url: string = $state('');
+	if (app_context.server_url) {
+		server_url = app_context.server_url;
 	}
 
 	let form_data = $state({
@@ -26,11 +26,11 @@
 				onSuccess: (ctx) => {
 					console.log('success');
 					const auth_token = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
-					// Store the token securely (e.g., in localStorage)
-					if (auth_token && app_context.is_tauri) {
-						console.log(auth_token);
-						localStorage.setItem('bearer_token', auth_token);
-					}
+					// // Store the token securely (e.g., in localStorage)
+					// if (auth_token && app_context.is_tauri) {
+					// 	console.log(auth_token);
+					// 	localStorage.setItem('bearer_token', auth_token);
+					// }
 
 					//redirect to the dashboard or sign in page
 				},
@@ -44,13 +44,13 @@
 </script>
 
 {#if app_context.is_tauri}
-	{#if app_context.server_address}
+	{#if app_context.server_url}
 		<div class="flex flex-col gap-2">
-			Server Set: {app_context.server_address}
+			Server Set: {app_context.server_url}
 			<button
 				class="cursor-pointer"
 				onclick={() => {
-					app_context.clearServer();
+					app_context.clearProperty('server_url');
 				}}>
 				Clear
 			</button>
@@ -62,11 +62,11 @@
 				id="server_address"
 				name="server_address"
 				placeholder="Enter you server address here"
-				bind:value={server_address} />
+				bind:value={server_url} />
 			<button
 				class="cursor-pointer"
 				onclick={() => {
-					app_context.setServer(server_address);
+					app_context.setServer(server_url);
 				}}>
 				Set
 			</button>
@@ -74,7 +74,7 @@
 	{/if}
 {/if}
 
-{#if !app_context.is_tauri || (app_context.is_tauri && app_context.server_address)}
+{#if !app_context.is_tauri || (app_context.is_tauri && app_context.server_url)}
 	<div class="flex flex-col gap-1">
 		<input class="border border-amber-600" bind:value={form_data.email} />
 		<input class="border border-amber-600" bind:value={form_data.name} />

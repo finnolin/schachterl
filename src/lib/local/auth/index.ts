@@ -3,23 +3,32 @@ import { inferAdditionalFields } from 'better-auth/client/plugins';
 import type { auth } from '$lib/server/auth';
 import { env } from '$env/dynamic/public';
 import { isTauri } from '@tauri-apps/api/core';
+import { app_context } from '../app/app-context.svelte';
+import log from '$lib/logger.svelte';
 
 let auth_client: ReturnType<typeof createAuthClient>;
 
-export function initializeAuthClient(serverUrl?: string) {
-	const baseURL = serverUrl || env.PUBLIC_BASE_URL!;
+export function initializeAuthClient(server_url?: string) {
+	const base_url = server_url || env.PUBLIC_BASE_URL!;
+	log.auth.debug('Create auth client for server: ', base_url);
 
 	auth_client = createAuthClient({
-		baseURL,
+		baseURL: base_url,
 		plugins: [inferAdditionalFields<typeof auth>()],
 		fetchOptions: {
 			// Store token on successful auth
-			onSuccess: (ctx) => {
+			onSuccess: async (ctx) => {
 				if (isTauri()) {
-					const authToken = ctx.response.headers.get('set-auth-token');
-					if (authToken) {
-						localStorage.setItem('bearer_token', authToken);
+					const auth_token = ctx.response.headers.get('set-auth-token');
+					if (auth_token) {
+						//localStorage.setItem('bearer_token', auth_token);
+						await app_context.setAppMeta('auth_token', auth_token);
 					}
+				}
+			},
+			onError: async (ctx) => {
+				if (ctx.response.status === 401 && isTauri()) {
+					await app_context.deleteAppMeta('auth_token');
 				}
 			},
 			// For Tauri: use Bearer token authentication
@@ -27,7 +36,8 @@ export function initializeAuthClient(serverUrl?: string) {
 				credentials: 'omit',
 				auth: {
 					type: 'Bearer',
-					token: () => localStorage.getItem('bearer_token') || ''
+					//token: async () => localStorage.getItem('bearer_token') || ''
+					token: async () => (await app_context.getAppMeta('auth_token')) || ''
 				}
 			}),
 			// For web: use cookies

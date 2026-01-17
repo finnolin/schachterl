@@ -19,7 +19,6 @@
 		try {
 			await local_db.initialize();
 			await app_context.initialize();
-			initializeAuthClient();
 			session = useSession();
 			const auth_client = getAuthClient();
 			const token = localStorage.getItem('bearer_token');

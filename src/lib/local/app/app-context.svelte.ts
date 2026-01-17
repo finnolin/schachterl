@@ -1,63 +1,112 @@
 import { local_db } from '$lib/local/db';
 import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
+import { load } from '@tauri-apps/plugin-store';
 import { v7 as uuid } from 'uuid';
 import log from '$lib/logger.svelte';
 import { eq } from 'drizzle-orm';
 import { isTauri } from '@tauri-apps/api/core';
+import { initializeAuthClient } from '$lib/local/auth';
 const schema = local_db.schema;
 
 export class AppContext {
 	private db: SqliteRemoteDatabase<typeof schema> | null = null;
-	client_id: string | null = null;
-	server_address: string | null = $state(null);
 	is_tauri: boolean = $state(isTauri());
+	store: Awaited<ReturnType<typeof load>> | undefined;
+
+	client_id: string | undefined = $state();
+	server_url: string | undefined = $state();
+	auth_token: string | undefined = $state();
+	bearer_token: string | undefined = $state();
 
 	async initialize() {
 		log.app.debug('Initializing app context...');
-		this.db = local_db.db;
-		await this.initClientID();
-	}
 
-	async initClientID() {
-		if (!this.db) return;
-		const [client_id] = await this.db
-			.select()
-			.from(schema.app_meta)
-			.where(eq(schema.app_meta.key, 'client_id'));
-		if (!client_id) {
-			const new_client_id = uuid();
-			log.app.debug('No client ID found...');
-			log.app.info('Setting client ID: ' + new_client_id);
-			await this.setAppMeta('client_id', new_client_id);
-			this.client_id = new_client_id;
+		// Initialize store for tauri
+		await this.initStore();
+
+		// Client ID:
+		await this.getProperty('client_id');
+		if (!this.client_id) {
+			log.app.info('Creating new client_id...');
+			const client_id = uuid();
+			this.setProperty('client_id', client_id);
+		}
+
+		if (this.is_tauri) {
+			// Server Address:
+			await this.getProperty('server_url');
+
+			// Bearer Token:
+			await this.getProperty('bearer_token');
+			await initializeAuthClient(this.server_url);
 		} else {
-			this.client_id = client_id.value;
+			await initializeAuthClient();
 		}
-		log.app.info('Client ID: ' + this.client_id);
-		this.initServer();
+
+		this.db = local_db.db;
 	}
-	async initServer() {
+
+	async initStore() {
 		if (isTauri()) {
-			log.app.debug('Checking server...');
-			const server_address = await this.getAppMeta('server');
-			if (!server_address) {
-				log.app.info('No server configured.');
-			} else {
-				log.app.debug('Server:' + server_address);
-				this.server_address = server_address;
-			}
+			log.app.debug('Initializing Store...');
+			this.store = await load('properties.json', { defaults: {}, autoSave: 100 });
 		}
 	}
 
-	async setServer(server_address: string) {
-		if (!isTauri()) return;
-		await this.setAppMeta('server', server_address);
-		this.server_address = server_address;
+	async getProperty<K extends keyof AppContext>(key: K): Promise<AppContext[K] | undefined> {
+		let value: AppContext[K] | undefined;
+
+		if (this.is_tauri) {
+			if (!this.store) return;
+			const property = await this.store.get<{ value: AppContext[K] }>(key);
+			value = property?.value;
+		} else {
+			const stored = localStorage.getItem(key);
+			value = stored as AppContext[K];
+		}
+
+		if (value !== undefined && value !== null) {
+			(this[key] as AppContext[K]) = value;
+			log.app.debug(key, ':', value);
+		} else {
+			log.app.debug('Property', key, 'not found...');
+		}
+
+		return value;
 	}
+
+	async setProperty<K extends keyof AppContext>(key: K, value: AppContext[K]) {
+		if (this.is_tauri) {
+			if (!this.store) return;
+			await this.store.set(key, { value });
+		} else {
+			localStorage.setItem(key, String(value));
+		}
+		(this[key] as AppContext[K]) = value;
+		log.app.debug(key, ':', value);
+	}
+
+	async clearProperty<K extends keyof AppContext>(key: K) {
+		if (this.is_tauri) {
+			if (!this.store) return;
+			await this.store.delete(key);
+		} else {
+			localStorage.removeItem(key);
+		}
+		(this[key] as AppContext[K]) = undefined as AppContext[K];
+		log.app.debug(key, 'deleted.');
+	}
+
+	async setServer(server_url: string) {
+		if (!isTauri()) return;
+		await this.setProperty('server_url', server_url);
+		await initializeAuthClient(this.server_url);
+		log.app.debug('after auth;');
+	}
+
 	async clearServer() {
 		if (!isTauri()) return;
-		await this.deleteAppMeta('server');
-		this.server_address = null;
+		await this.clearProperty('server_url');
 	}
 
 	async getAppMeta(property_name: string) {

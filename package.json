@@ -53,6 +53,7 @@
 	},
 	"dependencies": {
 		"@tauri-apps/plugin-sql": "^2.3.1",
+		"@tauri-apps/plugin-store": "^2.4.2",
 		"better-auth": "^1.4.13",
 		"drizzle-orm": "^0.45.1",
 		"postgres": "^3.4.8",
