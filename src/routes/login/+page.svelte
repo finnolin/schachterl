@@ -23,9 +23,10 @@
 				onRequest: (ctx) => {
 					console.log('requesting');
 				},
-				onSuccess: (ctx) => {
+				onSuccess: async (ctx) => {
 					console.log('success');
-					const auth_token = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
+					//const auth_token = ctx.response.headers.get('set-auth-token');
+					//await app_context.validateSession(); // get the token from the response headers
 					// // Store the token securely (e.g., in localStorage)
 					// if (auth_token && app_context.is_tauri) {
 					// 	console.log(auth_token);

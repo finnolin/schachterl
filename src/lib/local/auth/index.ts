@@ -7,6 +7,7 @@ import { app_context } from '../app/app-context.svelte';
 import log from '$lib/logger.svelte';
 
 let auth_client: ReturnType<typeof createAuthClient>;
+export type AuthClient = ReturnType<typeof initializeAuthClient>;
 
 export function initializeAuthClient(server_url?: string) {
 	const base_url = server_url || env.PUBLIC_BASE_URL!;
@@ -19,16 +20,22 @@ export function initializeAuthClient(server_url?: string) {
 			// Store token on successful auth
 			onSuccess: async (ctx) => {
 				if (isTauri()) {
-					const auth_token = ctx.response.headers.get('set-auth-token');
-					if (auth_token) {
+					const bearer_token = ctx.response.headers.get('set-auth-token');
+					if (bearer_token) {
 						//localStorage.setItem('bearer_token', auth_token);
-						await app_context.setAppMeta('auth_token', auth_token);
+						await app_context.setProperty('bearer_token', bearer_token);
+						console.log('ctx:', ctx.request);
 					}
+				}
+				if (ctx.request.url.toString().includes('/api/auth/sign-up/')) {
+					await app_context.validateSession();
 				}
 			},
 			onError: async (ctx) => {
 				if (ctx.response.status === 401 && isTauri()) {
-					await app_context.deleteAppMeta('auth_token');
+					console.log('error fetch auth');
+
+					await app_context.clearProperty('bearer_token');
 				}
 			},
 			// For Tauri: use Bearer token authentication
@@ -37,7 +44,7 @@ export function initializeAuthClient(server_url?: string) {
 				auth: {
 					type: 'Bearer',
 					//token: async () => localStorage.getItem('bearer_token') || ''
-					token: async () => (await app_context.getAppMeta('auth_token')) || ''
+					token: async () => (await app_context.getProperty('bearer_token')) || ''
 				}
 			}),
 			// For web: use cookies
@@ -61,3 +68,5 @@ export function getAuthClient() {
 // export const signUp = (...args: any[]) => getAuthClient().signUp(...args);
 export const signOut = () => getAuthClient().signOut();
 export const useSession = () => getAuthClient().useSession();
+
+export type Session = ReturnType<ReturnType<typeof getAuthClient>['useSession']>;

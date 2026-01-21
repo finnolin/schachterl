@@ -15,26 +15,33 @@ import log from '$lib/logger.svelte';
 const db_name_default = 'local';
 const db_name_string = 'sqlite:' + db_name_default + '.db';
 
-async function getTauriDb(db_name: string = db_name_default) {
+async function getTauriDb(db_name_string: string) {
 	return await Database.load(db_name_string);
 }
-function getSQLocalDb(db_name: string = db_name_default) {
+function getSQLocalDb(db_name_string: string) {
 	return new SQLocal(db_name_string);
 }
 
-class DatabaseService {
+export class DatabaseService {
+	private user_id: string;
+	private db_string: string;
 	private db_connection: Database | SQLocal | undefined;
 	private drizzle_schema = schema;
 	private drizzle_db: SqliteRemoteDatabase<typeof schema> | null = null;
 
-	async initialize(db_name: string = db_name_default) {
+	constructor(user_id: string) {
+		this.user_id = user_id;
+		this.db_string = 'sqlite:' + user_id + '.db';
+	}
+
+	async initialize(db_string: string = this.db_string) {
 		if (isTauri()) {
 			console.log('is tauri');
-			this.db_connection = await getTauriDb();
-			this.drizzle_db = createProxyTauri(db_name_string);
+			this.db_connection = await getTauriDb(db_string);
+			this.drizzle_db = createProxyTauri(db_string);
 		} else {
-			this.db_connection = getSQLocalDb();
-			this.drizzle_db = createProxySQLocal(db_name_string);
+			this.db_connection = getSQLocalDb(db_string);
+			this.drizzle_db = createProxySQLocal(db_string);
 		}
 
 		try {
@@ -110,8 +117,6 @@ class DatabaseService {
 			//const sql_db = await getTauriDb();
 			await sql_db.execute(statement_string);
 		} else {
-			console.log('test');
-
 			const sql_db = this.db_connection as SQLocal;
 			const query = await sql_db.sql(statement_string);
 			console.log(query);
@@ -235,13 +240,26 @@ class DatabaseService {
 		return this.drizzle_schema;
 	}
 
-	async close(db_name: string = db_name_default) {
-		// if (this.dbConnection) {
-		// 	await sqliteService.closeDatabase(db_name, false);
+	async destroy() {
+		await this.closeDBConnection();
+		this.drizzle_db = null;
+		this.db_connection = undefined;
+	}
+
+	async closeDBConnection(db_string: string = this.db_string) {
+		log.db.info('Closing database', db_string);
+		if (isTauri()) {
+			const sql_db = this.db_connection as Database;
+			await sql_db.close();
+		} else {
+			const sql_db = this.db_connection as SQLocal;
+		}
+		// if (this.db_connection) {
+		// 	await this.db_connection
 		// }
 		// this.dbConnection = null;
 		// this.drizzle_db = null;
 	}
 }
 
-export const local_db = new DatabaseService();
+export const local_db = new DatabaseService('unkown');

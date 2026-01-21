@@ -7,21 +7,24 @@
 	import { initializeAuthClient, useSession, getAuthClient } from '$lib/local/auth';
 	import log from '$lib/logger.svelte';
 
+	//Components:
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import { ModeWatcher } from 'mode-watcher';
+
 	let { children } = $props();
 	let is_ready = $state(false);
 	let session = $state<ReturnType<typeof useSession>>();
-	$effect(() => {
-		if ($session?.data) {
-			log.info($session.data.session);
-		}
-	});
+	// $effect(() => {
+	// 	if ($session?.data) {
+	// 		log.info($session.data.session);
+	// 	}
+	// });
 	onMount(async () => {
 		try {
-			await local_db.initialize();
 			await app_context.initialize();
-			session = useSession();
-			const auth_client = getAuthClient();
-			const token = localStorage.getItem('bearer_token');
+			//await local_db.initialize();
+			//session = useSession();
 			// if (token) {
 			// 	const tauri_session = await auth_client.getSession({
 			// 		fetchOptions: {
@@ -39,22 +42,40 @@
 			console.error('Failed to initialize database:', error);
 		}
 	});
+
+	async function logout() {
+		await app_context.logout();
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-
-<div class="flex w-full h-10 p-2 gap-2">
-	{#if $session?.data}
+<ModeWatcher />
+<Sidebar.Provider>
+	<AppSidebar />
+	<Sidebar.Inset>
+		<main>
+			<Sidebar.Trigger />
+			<div class="flex w-full h-10 p-2 gap-2" data-sveltekit-preload-data="false">
+				<!-- {#if $session?.data}
 		have session: {$session.data.user?.email}
 	{:else}
 		no session
-	{/if}
-	<a href="/">Home</a>
-	<a href="/login">Login</a>
-</div>
+	{/if} -->
 
-{#if is_ready}
-	{@render children()}
-{:else}
-	<div>Setting up database...</div>
-{/if}
+				<a href="/">Home</a>
+				<a href="/test">Test</a>
+				{#if app_context.session}
+					<button onclick={logout}>Logout</button>
+				{:else}
+					<a href="/login">Login</a>
+				{/if}
+			</div>
+
+			{#if is_ready}
+				{@render children?.()}
+			{:else}
+				<div>Setting up database...</div>
+			{/if}
+		</main>
+	</Sidebar.Inset>
+</Sidebar.Provider>
