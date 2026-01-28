@@ -4,13 +4,17 @@
 	import { onMount } from 'svelte';
 	import { local_db } from '$lib/local/db';
 	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
 	import { initializeAuthClient, useSession, getAuthClient } from '$lib/local/auth';
 	import log from '$lib/logger.svelte';
 
 	//Components:
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	// import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	// import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import AppSidebar from '$lib/components/layout/sidebar/app-sidebar.svelte';
 	import { ModeWatcher } from 'mode-watcher';
+	import SidebarWrapper from '$lib/components/layout/sidebar/sidebar-wrapper.svelte';
+	import SidebarMain from '$lib/components/layout/sidebar/sidebar-main.svelte';
 
 	let { children } = $props();
 	let is_ready = $state(false);
@@ -23,6 +27,7 @@
 	onMount(async () => {
 		try {
 			await app_context.initialize();
+			await sidebar.initialize();
 			//await local_db.initialize();
 			//session = useSession();
 			// if (token) {
@@ -50,18 +55,12 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <ModeWatcher />
-<Sidebar.Provider>
+<!-- <Sidebar.Provider>
 	<AppSidebar />
 	<Sidebar.Inset>
 		<main>
 			<Sidebar.Trigger />
 			<div class="flex w-full h-10 p-2 gap-2" data-sveltekit-preload-data="false">
-				<!-- {#if $session?.data}
-		have session: {$session.data.user?.email}
-	{:else}
-		no session
-	{/if} -->
-
 				<a href="/">Home</a>
 				<a href="/test">Test</a>
 				{#if app_context.session}
@@ -78,4 +77,15 @@
 			{/if}
 		</main>
 	</Sidebar.Inset>
-</Sidebar.Provider>
+</Sidebar.Provider> -->
+{#if is_ready}
+	<SidebarWrapper frame={false}>
+		{#snippet sidebar_content()}
+			<AppSidebar />
+		{/snippet}
+
+		<SidebarMain>
+			{@render children?.()}
+		</SidebarMain>
+	</SidebarWrapper>
+{/if}

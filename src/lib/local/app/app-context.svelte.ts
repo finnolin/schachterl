@@ -20,6 +20,7 @@ export class AppContext {
 	private Database: DatabaseService | undefined;
 	private drizzle: SqliteRemoteDatabase<typeof schema> | null = $state(null);
 	private drizzle_schema = schema;
+
 	is_tauri: boolean = $state(isTauri());
 	store: Awaited<ReturnType<typeof load>> | undefined;
 
@@ -32,6 +33,7 @@ export class AppContext {
 	auth_token: string | undefined = $state();
 	user_id: string | undefined = $state();
 	bearer_token: string | undefined = $state();
+	sidebar_size: number | undefined = $state();
 
 	async initialize() {
 		log.app.debug('Initializing app context...');
