@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { local_db } from '$lib/local/db';
 	console.log('test: +page.svelte');
 
 	let refresh = $state(0);
-	const db = app_context.db;
-	const schema = app_context.schema;
+	const db = local_db.db;
+	const schema = local_db.schema;
 	if (!db) {
 		goto('/login');
 	}
 	async function addUser() {
-		await db!.insert(schema.user).values({ name: 'test' });
+		const user = await db!.insert(schema.user).values({ name: 'test' }).returning();
+		console.log(user);
+
 		refresh++; // trigger reload
 	}
 

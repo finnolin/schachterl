@@ -2,10 +2,11 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
-	import { local_db } from '$lib/local/db';
 	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { store } from '$lib/local/app/store.svelte';
 	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
 	import { initializeAuthClient, useSession, getAuthClient } from '$lib/local/auth';
+	import { auth } from '$lib/local/app/auth.svelte';
 	import log from '$lib/logger.svelte';
 
 	//Components:
@@ -26,22 +27,10 @@
 	// });
 	onMount(async () => {
 		try {
+			// 1. Initialize store for tauri
+			await store.initialize();
 			await app_context.initialize();
 			await sidebar.initialize();
-			//await local_db.initialize();
-			//session = useSession();
-			// if (token) {
-			// 	const tauri_session = await auth_client.getSession({
-			// 		fetchOptions: {
-			// 			headers: {
-			// 				Authorization: `Bearer ${token}`
-			// 			}
-			// 		}
-			// 	});
-			// 	log.debug('tauri_session', tauri_session);
-			// }
-			//console.log($session?.data);
-
 			is_ready = true;
 		} catch (error) {
 			console.error('Failed to initialize database:', error);
@@ -49,7 +38,7 @@
 	});
 
 	async function logout() {
-		await app_context.logout();
+		await auth.logout();
 	}
 </script>
 

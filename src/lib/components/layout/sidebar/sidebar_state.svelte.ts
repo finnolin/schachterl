@@ -1,4 +1,4 @@
-import { app_context } from '$lib/local/app/app-context.svelte';
+import { store } from '$lib/local/app/store.svelte';
 
 class SidebarState {
 	is_collapsed = $state(false);
@@ -39,10 +39,10 @@ class SidebarState {
 	}
 
 	saveLayout() {
-		app_context.setProperty('sidebar_size', this.sidebar_size);
+		store.setProperty('sidebar_size', this.sidebar_size);
 	}
 	async getLayout() {
-		const size = await app_context.getProperty('sidebar_size');
+		const size = await store.getProperty('sidebar_size');
 		if (size) {
 			this.sidebar_size = Number(size);
 		}

@@ -23,18 +23,16 @@ function getSQLocalDb(db_name_string: string) {
 }
 
 export class DatabaseService {
-	private user_id: string;
-	private db_string: string;
+	private user_id: string | undefined;
+	private db_string: string | undefined;
 	private db_connection: Database | SQLocal | undefined;
 	private drizzle_schema = schema;
 	private drizzle_db: SqliteRemoteDatabase<typeof schema> | null = null;
 
-	constructor(user_id: string) {
+	async initialize(user_id: string) {
 		this.user_id = user_id;
 		this.db_string = 'sqlite:' + user_id + '.db';
-	}
-
-	async initialize(db_string: string = this.db_string) {
+		const db_string = this.db_string;
 		if (isTauri()) {
 			console.log('is tauri');
 			this.db_connection = await getTauriDb(db_string);
@@ -241,12 +239,16 @@ export class DatabaseService {
 	}
 
 	async destroy() {
-		await this.closeDBConnection();
+		const db_string = this.db_string || 'unknown';
+		await this.closeDBConnection(db_string);
 		this.drizzle_db = null;
 		this.db_connection = undefined;
 	}
 
-	async closeDBConnection(db_string: string = this.db_string) {
+	async closeDBConnection(db_string: string) {
+		if (!this.db_connection) {
+			return;
+		}
 		log.db.info('Closing database', db_string);
 		if (isTauri()) {
 			const sql_db = this.db_connection as Database;
@@ -262,4 +264,4 @@ export class DatabaseService {
 	}
 }
 
-export const local_db = new DatabaseService('unkown');
+export const local_db = new DatabaseService();

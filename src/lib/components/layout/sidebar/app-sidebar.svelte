@@ -7,16 +7,18 @@
 
 	// States:
 	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { store } from '$lib/local/app/store.svelte';
+	import { auth } from '$lib/local/app/auth.svelte';
 </script>
 
 <Sidebar>
 	<SidebarHeader>header</SidebarHeader>
-	<SidebarContent>content</SidebarContent>
+	<SidebarContent><div class="flex flex-col gap-2"><a href="/test">Test</a></div></SidebarContent>
 	<SidebarFooter>
 		<ModeToggle />
-		<div class="p-1">Server: {app_context.server_url}</div>
-		{#if app_context.session}
-			<div class="p-1">User: {app_context.user_id}</div>
+		<div class="p-1">Server: {store.server_url}</div>
+		{#if auth.session}
+			<div class="p-1">User: {store.user_id}</div>
 		{/if}
 	</SidebarFooter>
 </Sidebar>

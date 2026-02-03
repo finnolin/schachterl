@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { store } from '$lib/local/app/store.svelte';
 	import { getAuthClient } from '$lib/local/auth';
 	const auth_client = getAuthClient();
+
 	let server_url: string = $state('');
-	if (app_context.server_url) {
-		server_url = app_context.server_url;
+	if (store.server_url) {
+		server_url = store.server_url;
 	}
 
 	let form_data = $state({
@@ -45,13 +47,13 @@
 </script>
 
 {#if app_context.is_tauri}
-	{#if app_context.server_url}
+	{#if store.server_url}
 		<div class="flex flex-col gap-2">
-			Server Set: {app_context.server_url}
+			Server Set: {store.server_url}
 			<button
 				class="cursor-pointer"
 				onclick={() => {
-					app_context.clearProperty('server_url');
+					store.clearProperty('server_url');
 				}}>
 				Clear
 			</button>
@@ -75,7 +77,7 @@
 	{/if}
 {/if}
 
-{#if !app_context.is_tauri || (app_context.is_tauri && app_context.server_url)}
+{#if !app_context.is_tauri || (app_context.is_tauri && store.server_url)}
 	<div class="flex flex-col gap-1">
 		<input class="border border-amber-600" bind:value={form_data.email} />
 		<input class="border border-amber-600" bind:value={form_data.name} />

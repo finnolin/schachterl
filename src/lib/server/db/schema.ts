@@ -1,4 +1,15 @@
-import { pgTable, serial, text, timestamp, boolean, uuid, pgEnum } from 'drizzle-orm/pg-core';
+import {
+	pgTable,
+	serial,
+	text,
+	timestamp,
+	boolean,
+	uuid,
+	pgEnum,
+	integer,
+	pgSequence,
+	jsonb
+} from 'drizzle-orm/pg-core';
 
 // * Auth tables:
 export const user_role_enum = pgEnum('user_roles', ['user', 'admin']);
@@ -63,4 +74,23 @@ export const verification = pgTable('verification', {
 		.notNull()
 		.$defaultFn(() => new Date())
 		.$onUpdateFn(() => new Date())
+});
+
+export const enum_change_operation = pgEnum('change_operation', ['create', 'update', 'delete']);
+export const change = pgTable('change', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	seq: integer('seq').notNull().generatedAlwaysAsIdentity({
+		name: 'change_seq',
+		startWith: 1,
+		increment: 1
+	}),
+
+	entity_type: text('entity_type').notNull(),
+	entity_id: text('entity_id').notNull(),
+
+	op: enum_change_operation().notNull(),
+	patch: jsonb('patch'),
+
+	user_id: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
+	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date())
 });

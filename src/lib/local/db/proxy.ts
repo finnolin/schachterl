@@ -12,35 +12,33 @@ export function createProxyTauri(db_name: string) {
 	return drizzle<typeof schema>(
 		async (sql, params, method) => {
 			const sqlite = await getTauriDb(db_name);
-			let rows: any = [];
-			let results = [];
 			log.db.debug(sql);
-			// If the query is a SELECT, use the select method
-			if (isSelectQuery(sql)) {
-				rows = await sqlite.select(sql, params).catch((e) => {
-					log.db.error('SQL Error:', e);
-					return [];
-				});
-			} else {
-				// Otherwise, use the execute method
-				rows = await sqlite.execute(sql, params).catch((e) => {
-					log.db.error('SQL Error:', e);
-					return [];
-				});
+
+			const isSelect = isSelectQuery(sql);
+			const returning = /\breturning\b/i.test(sql);
+
+			let rows: any[] = [];
+
+			try {
+				if (isSelect || returning) {
+					// SELECT or INSERT/UPDATE/DELETE ... RETURNING
+					const result = await sqlite.select<any[]>(sql, params);
+					rows = result.map((row) => Object.values(row));
+				} else {
+					// Plain write query
+					await sqlite.execute(sql, params);
+					return { rows: [] };
+				}
+			} catch (e) {
+				log.db.error('SQL Error:', e);
 				return { rows: [] };
 			}
 
-			rows = rows.map((row: any) => {
-				return Object.values(row);
-			});
+			const results = method === 'all' ? rows : rows[0];
 
-			// If the method is "all", return all rows
-			results = method === 'all' ? rows : rows[0];
-			//await sqlite.close();
 			return { rows: results };
 		},
-		// Pass the schema to the drizzle instance
-		{ schema: schema }
+		{ schema }
 	);
 }
 
