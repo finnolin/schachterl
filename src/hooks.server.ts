@@ -24,7 +24,7 @@ const handleCors: Handle = async ({ event, resolve }) => {
 	}
 	log.hooks.debug('got request from tauri app');
 
-	const corsEnabledRoutes = ['/api/auth', '/api/public'];
+	const corsEnabledRoutes = ['/api/auth', '/api/public', '/api/v1'];
 
 	const shouldEnableCors = corsEnabledRoutes.some((route) => event.url.pathname.startsWith(route));
 
@@ -38,7 +38,7 @@ const handleCors: Handle = async ({ event, resolve }) => {
 			headers: {
 				'Access-Control-Allow-Origin': event.request.headers.get('origin') || '*',
 				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-id',
 				'Access-Control-Allow-Credentials': 'true',
 				'Access-Control-Max-Age': '86400'
 			}
@@ -66,7 +66,9 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	}
 	const session = await auth.api.getSession({ headers: event.request.headers });
 
-	event.locals.session = session?.session;
+	event.locals.session = session?.session ?? null;
+	event.locals.user = session?.user ?? null;
+	log.hooks.debug(event.locals.session);
 	log.hooks.debug('handling: ' + event.url.pathname);
 	return svelteKitHandler({ event, resolve, auth, building });
 };

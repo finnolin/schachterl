@@ -25,6 +25,12 @@ class Store {
 			log.store.debug('Loading tauri store...');
 			this.store = await load('properties.json', { defaults: {}, autoSave: 100 });
 		}
+		this.getProperty('server_url');
+		this.getProperty('user_id');
+		this.getProperty('client_id');
+		// this.getProperty('auth_token');
+		// this.getProperty('bearer_token');
+		this.getProperty('sidebar_size');
 	}
 
 	async getProperty<K extends keyof Store>(key: K): Promise<Store[K] | undefined> {

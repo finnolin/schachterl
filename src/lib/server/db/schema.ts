@@ -36,6 +36,7 @@ export const session = pgTable('session', {
 	expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
 	ip_address: text('ip_address'),
 	user_agent: text('user_agent'),
+	client_id: text('client_id'),
 	created_at: timestamp('created_at', { withTimezone: true }).notNull(),
 	updated_at: timestamp('updated_at', { withTimezone: true })
 		.notNull()
@@ -92,5 +93,22 @@ export const change = pgTable('change', {
 	patch: jsonb('patch'),
 
 	user_id: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
-	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date())
+	client_id: uuid('client_id').notNull(),
+	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
+	base_version: integer('base_version').notNull()
 });
+export type Change = typeof change.$inferSelect;
+
+export const enum_resource_type = pgEnum('resource_type', ['note']);
+export const resource = pgTable('resource', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	type: enum_resource_type().notNull(),
+	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
+	updated_at: timestamp('updated_at', { withTimezone: true })
+		.notNull()
+		.$defaultFn(() => new Date())
+		.$onUpdateFn(() => new Date()),
+	deleted_at: timestamp('deleted_at', { withTimezone: true }),
+	version: integer('version').notNull().default(0)
+});
+export type Resource = typeof resource.$inferSelect;

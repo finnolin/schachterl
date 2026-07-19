@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import Database from '@tauri-apps/plugin-sql';
 import { SQLocalDrizzle } from 'sqlocal/drizzle';
 import * as schema from './schema';
+import { relations } from './relations';
 import log from '$lib/logger.svelte';
 
 async function getTauriDb(db_name: string) {
@@ -9,10 +10,10 @@ async function getTauriDb(db_name: string) {
 }
 
 export function createProxyTauri(db_name: string) {
-	return drizzle<typeof schema>(
+	return drizzle<typeof relations>(
 		async (sql, params, method) => {
 			const sqlite = await getTauriDb(db_name);
-			log.db.debug(sql);
+			//log.db.debug(sql);
 
 			const isSelect = isSelectQuery(sql);
 			const returning = /\breturning\b/i.test(sql);
@@ -38,13 +39,13 @@ export function createProxyTauri(db_name: string) {
 
 			return { rows: results };
 		},
-		{ schema }
+		{ relations }
 	);
 }
 
 export function createProxySQLocal(db_name: string) {
 	const { driver, batchDriver } = new SQLocalDrizzle(db_name);
-	return drizzle(driver, batchDriver, { schema: schema });
+	return drizzle(driver, batchDriver, { relations: relations });
 }
 
 function isSelectQuery(sql: string): boolean {

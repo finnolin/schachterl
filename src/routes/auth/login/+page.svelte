@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { app_context } from '$lib/local/app/app-context.svelte';
 	import { store } from '$lib/local/app/store.svelte';
 	import { auth } from '$lib/local/auth/auth.svelte';
-	//import { getAuthClient } from '$lib/local/auth';
+	import { resolve } from '$app/paths'; //import { getAuthClient } from '$lib/local/auth';
 	//const auth_client = getAuthClient();
 
 	let server_url: string = $state('');
@@ -12,32 +13,30 @@
 
 	let form_data = $state({
 		email: '',
-		password: '',
-		name: ''
+		password: ''
 	});
-	async function register() {
+	async function login() {
 		if (!auth.client) return;
-		const { data, error } = await auth.client.signUp.email(
+		const { data, error } = await auth.client.signIn.email(
 			{
 				email: form_data.email, // user email address
-				password: form_data.password, // user password -> min 8 characters by default
-				name: form_data.name // user display name
+				password: form_data.password // user password -> min 8 characters by default
 			},
 			{
-				onRequest: (ctx) => {
-					console.log('requesting');
-				},
+				// onRequest: (ctx) => {
+				// 	console.log('requesting');
+				// },
 				onSuccess: async (ctx) => {
 					console.log('success');
 					//const auth_token = ctx.response.headers.get('set-auth-token');
 					//await app_context.validateSession(); // get the token from the response headers
 					// // Store the token securely (e.g., in localStorage)
 					// if (auth_token && app_context.is_tauri) {
-					// 	console.log(auth_token);
-					// 	localStorage.setItem('bearer_token', auth_token);
+					//  console.log(auth_token);
+					//  localStorage.setItem('bearer_token', auth_token);
 					// }
 
-					//redirect to the dashboard or sign in page
+					goto(resolve('/'));
 				},
 				onError: (ctx) => {
 					// display the error message
@@ -82,12 +81,18 @@
 {#if !app_context.is_tauri || (app_context.is_tauri && store.server_url)}
 	<div class="flex flex-col gap-1">
 		<input class="border border-amber-600" bind:value={form_data.email} />
-		<input class="border border-amber-600" bind:value={form_data.name} />
 		<input class="border border-amber-600" bind:value={form_data.password} />
 		<button
 			class="cursor-pointer"
 			onclick={() => {
-				register();
+				login();
+			}}>
+			Login
+		</button>
+		<button
+			class="cursor-pointer"
+			onclick={() => {
+				goto(resolve('/auth/register'));
 			}}>
 			Register
 		</button>

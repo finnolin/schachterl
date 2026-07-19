@@ -5,15 +5,52 @@ import { type SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
 import * as schema from './schema';
 import Database from '@tauri-apps/plugin-sql';
 import { isTauri } from '@tauri-apps/api/core';
+import { store } from '../app/store.svelte';
+import { relations } from './relations';
+import { app_context } from '../app/app-context.svelte';
 
 import { SQLocal } from 'sqlocal';
-import { getMigrations } from './utils';
-import journal from './drizzle/migrations/meta/_journal.json';
-
-// example-usage.svelte.ts
 import log from '$lib/logger.svelte';
+
 const db_name_default = 'local';
 const db_name_string = 'sqlite:' + db_name_default + '.db';
+
+// ---------------------------------------------------------------------------
+// Migration discovery (drizzle-kit v3 layout, no journal.json)
+//
+// New folder structure:
+//   drizzle/migrations/
+//     20260716022237_groovy_puma/
+//       migration.sql
+//       snapshot.json
+//
+// The folder name starts with a fixed-width timestamp, so lexicographic
+// sorting of the folder names yields the correct application order.
+// The folder name *is* the tag.
+// ---------------------------------------------------------------------------
+
+type MigrationEntry = {
+	tag: string;
+	sql_content: string;
+};
+
+const migration_files = import.meta.glob<string>('./drizzle/migrations/*/migration.sql', {
+	eager: true,
+	query: '?raw',
+	import: 'default'
+});
+
+function getMigrationEntries(): MigrationEntry[] {
+	return Object.entries(migration_files)
+		.map(([path, sql_content]) => {
+			// './drizzle/migrations/20260716022237_groovy_puma/migration.sql'
+			// -> '20260716022237_groovy_puma'
+			const parts = path.split('/');
+			const tag = parts[parts.length - 2];
+			return { tag, sql_content };
+		})
+		.sort((a, b) => a.tag.localeCompare(b.tag));
+}
 
 async function getTauriDb(db_name_string: string) {
 	return await Database.load(db_name_string);
@@ -23,18 +60,27 @@ function getSQLocalDb(db_name_string: string) {
 }
 
 export class DatabaseService {
-	private user_id: string | undefined;
+	user_id: string | undefined;
 	private db_string: string | undefined;
 	private db_connection: Database | SQLocal | undefined;
 	private drizzle_schema = schema;
-	private drizzle_db: SqliteRemoteDatabase<typeof schema> | null = null;
+	private drizzle_db: SqliteRemoteDatabase<typeof relations> | null = null;
+	private tx_queue: Promise<unknown> = Promise.resolve();
+	private migration_entries: MigrationEntry[] = getMigrationEntries();
 
-	async initialize(user_id: string) {
-		this.user_id = user_id;
-		this.db_string = 'sqlite:' + user_id + '.db';
+	async initialize() {
+		if (this.db_connection && store.user_id != this.user_id) {
+			log.db.info('DB already exists. Closing...');
+			await this.destroy();
+		}
+		if (store.user_id) {
+			this.user_id = store.user_id;
+			this.db_string = 'sqlite:' + this.user_id + '.db';
+		} else {
+			this.db_string = 'sqlite:' + 'local_only' + '.db';
+		}
 		const db_string = this.db_string;
 		if (isTauri()) {
-			console.log('is tauri');
 			this.db_connection = await getTauriDb(db_string);
 			this.drizzle_db = createProxyTauri(db_string);
 		} else {
@@ -57,6 +103,9 @@ export class DatabaseService {
 				await this.applyMigrations();
 			}
 
+			// Set in_flight of all changes to false
+			await this.drizzle_db.update(schema.change).set({ in_flight: false });
+			app_context.setDb(this.drizzle_db);
 			return this.drizzle_db;
 		} catch (error) {
 			console.error('Database initialization error:', error);
@@ -69,12 +118,9 @@ export class DatabaseService {
 		log.db.debug('Verifying database...');
 		if (isTauri()) {
 			const sql_db = this.db_connection as Database;
-			//const sql_db = await getTauriDb();
 			const query = await sql_db.select<{ name: string }[]>(
 				"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
 			);
-			console.log(query);
-
 			if (query.length > 0) {
 				return true;
 			}
@@ -88,47 +134,42 @@ export class DatabaseService {
 			}
 		}
 		return false;
-		// const table_check = await this.db_connection?.execute(
-		// 	"SELECT name FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
-		// );
-		// if (table_check.values && table_check.values.length > 0) {
-		// 	log.db.info('Database OK');
-		// 	return;
-		// }
-		//log.db.warn('System tables not found...');
-		//await this.prepareDatabase();
-	}
-
-	private async prepareDatabase() {
-		// if (!this.dbConnection) return;
-		// await this.applyMigrations2();
 	}
 
 	private async executeStatement(statement_string: string) {
 		if (isTauri()) {
-			console.log('Connection object:', this.db_connection);
-			console.log(
-				'Connection methods:',
-				Object.getOwnPropertyNames(Object.getPrototypeOf(this.db_connection))
-			);
 			const sql_db = this.db_connection as Database;
-			//const sql_db = await getTauriDb();
 			await sql_db.execute(statement_string);
 		} else {
 			const sql_db = this.db_connection as SQLocal;
-			const query = await sql_db.sql(statement_string);
-			console.log(query);
-
-			if (query.length > 0) {
-				return true;
-			}
+			await sql_db.sql(statement_string);
 		}
+	}
+
+	async withTransaction<T>(fn: () => Promise<T>): Promise<T> {
+		const run = this.tx_queue.then(async () => {
+			await this.executeStatement('BEGIN');
+			try {
+				const result = await fn();
+				await this.executeStatement('COMMIT');
+				return result;
+			} catch (e) {
+				await this.executeStatement('ROLLBACK');
+				throw e;
+			}
+		});
+		this.tx_queue = run.catch(() => {});
+		return run;
 	}
 
 	private async checkSchemaHead() {
 		if (!this.drizzle_db) return;
 		log.migrator.debug('Checking schema...');
-		const expected_schema_head = journal.entries[journal.entries.length - 1].tag;
+		if (this.migration_entries.length === 0) {
+			log.migrator.warn('No migrations found in bundle.');
+			return true;
+		}
+		const expected_schema_head = this.migration_entries[this.migration_entries.length - 1].tag;
 		try {
 			const applied_schema_head = await this.drizzle_db
 				.select({ tag: this.schema.drizzle_migrations.tag })
@@ -149,9 +190,10 @@ export class DatabaseService {
 			return false;
 		}
 	}
+
 	private async applyMigrations() {
 		if (!this.drizzle_db) return;
-		for (const migration of journal.entries) {
+		for (const migration of this.migration_entries) {
 			log.migrator.debug('Processing migration: ' + migration.tag);
 			let applied_migration: schema.Migration | undefined;
 			try {
@@ -162,15 +204,15 @@ export class DatabaseService {
 				applied_migration = result;
 			} catch (error) {
 				log.migrator.warn('Error getting applied migration.');
-				//throw error;
 			}
 			if (applied_migration && applied_migration.tag == migration.tag) {
 				log.migrator.info(migration.tag, 'already exists.');
 				continue;
 			}
-			const drizzle_migration = await this.getSQLStatements(migration.tag);
+			const statements = this.splitStatements(migration.sql_content);
+			const hash = await this.generateHash(migration.sql_content);
 			try {
-				for (const statement of drizzle_migration.sql) {
+				for (const statement of statements) {
 					if (statement.trim()) {
 						log.migrator.debug(`Statement: ${statement.substring(0, 100)}...`);
 						await this.executeStatement(statement);
@@ -178,7 +220,7 @@ export class DatabaseService {
 				}
 				await this.drizzle_db
 					.insert(schema.drizzle_migrations)
-					.values({ hash: drizzle_migration.hash, tag: migration.tag });
+					.values({ hash, tag: migration.tag });
 			} catch (error) {
 				log.migrator.error(error);
 				throw error;
@@ -188,33 +230,13 @@ export class DatabaseService {
 		log.migrator.info('Successfully applied migrations.');
 	}
 
-	private async getSQLStatements(tag: string) {
-		// Import all SQL files upfront with a static glob pattern
-		const migrationFiles = import.meta.glob<string>('./drizzle/migrations/*.sql', {
-			eager: true,
-			query: '?raw',
-			import: 'default'
-		});
-
-		// Find the specific file by tag
-		const fileName = `./drizzle/migrations/${tag}.sql`;
-		const fileContent = migrationFiles[fileName];
-
-		if (!fileContent) {
-			throw new Error(`No file ${tag}.sql found in migrations folder`);
-		}
-
-		// Split by statement breakpoint, same as the original migrator
-		const statements = fileContent.split('--> statement-breakpoint').map((it) => it.trim());
-
-		// Generate hash like the original
-		const hash = await this.generateHash(fileContent);
-
-		return {
-			sql: statements,
-			hash
-		};
+	private splitStatements(sql_content: string): string[] {
+		// drizzle still emits '--> statement-breakpoint' markers between
+		// statements in migration.sql. If a file has none, split() simply
+		// returns the whole file as a single statement, which is fine.
+		return sql_content.split('--> statement-breakpoint').map((it) => it.trim());
 	}
+
 	private async generateHash(content: string): Promise<string> {
 		// For browser environment, use Web Crypto API
 		const encoder = new TextEncoder();
@@ -243,6 +265,7 @@ export class DatabaseService {
 		await this.closeDBConnection(db_string);
 		this.drizzle_db = null;
 		this.db_connection = undefined;
+		this.user_id = undefined;
 	}
 
 	async closeDBConnection(db_string: string) {
@@ -255,12 +278,8 @@ export class DatabaseService {
 			await sql_db.close();
 		} else {
 			const sql_db = this.db_connection as SQLocal;
+			// SQLocal: no explicit close needed here (or use sql_db.destroy() if desired)
 		}
-		// if (this.db_connection) {
-		// 	await this.db_connection
-		// }
-		// this.dbConnection = null;
-		// this.drizzle_db = null;
 	}
 }
 

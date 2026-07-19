@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+import { relations } from './relations';
 import { env } from '$env/dynamic/private';
 
 const client = postgres(
@@ -19,4 +20,6 @@ const client = postgres(
 	}
 );
 
-export const db = drizzle(client, { schema });
+export const db = drizzle({ client, relations });
+export { schema };
+export type ServerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];

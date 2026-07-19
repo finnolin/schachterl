@@ -1,12 +1,12 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+
 	import { onMount } from 'svelte';
 	import { app_context } from '$lib/local/app/app-context.svelte';
 	import { store } from '$lib/local/app/store.svelte';
 	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
-	import { initializeAuthClient, useSession, getAuthClient } from '$lib/local/auth';
-	import { auth } from '$lib/local/app/auth.svelte';
+	import { auth } from '$lib/local/auth/auth.svelte';
 	import log from '$lib/logger.svelte';
 
 	//Components:
@@ -19,7 +19,6 @@
 
 	let { children } = $props();
 	let is_ready = $state(false);
-	let session = $state<ReturnType<typeof useSession>>();
 	// $effect(() => {
 	// 	if ($session?.data) {
 	// 		log.info($session.data.session);

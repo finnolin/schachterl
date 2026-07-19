@@ -12,7 +12,8 @@ import { env } from '$env/dynamic/public';
 export const auth = betterAuth({
 	baseURL: env.PUBLIC_BASE_URL!,
 	database: drizzleAdapter(db, {
-		provider: 'pg'
+		provider: 'pg',
+		schema: tables
 	}),
 
 	advanced: {
@@ -24,7 +25,7 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true
 	},
-	plugins: [bearer(), sveltekitCookies(() => getRequestEvent() as any)],
+	plugins: [bearer(), sveltekitCookies(getRequestEvent)],
 
 	// DB schema adjustments for better-auth
 	user: {
@@ -36,7 +37,7 @@ export const auth = betterAuth({
 			updatedAt: 'updated_at'
 			//banExpires: 'ban_expires',
 			//banReason: 'ban_reason'
-		} as any
+		}
 	},
 	session: {
 		expiresIn: 60 * 60 * 24 * 14, // 14 days in seconds (default)
@@ -54,7 +55,14 @@ export const auth = betterAuth({
 			createdAt: 'created_at',
 			updatedAt: 'updated_at'
 			//impersonatedBy: 'impersonated_by'
-		} as any
+		},
+		additionalFields: {
+			client_id: {
+				type: 'string',
+				required: true,
+				input: true
+			}
+		}
 	},
 	account: {
 		modelName: 'account',
@@ -78,6 +86,18 @@ export const auth = betterAuth({
 			expiresAt: 'expires',
 			createdAt: 'created_at',
 			updatedAt: 'updated_at'
+		}
+	},
+	databaseHooks: {
+		session: {
+			create: {
+				before: async (session, ctx) => ({
+					data: {
+						...session,
+						client_id: ctx?.headers?.get('x-client-id') ?? 'unknown'
+					}
+				})
+			}
 		}
 	}
 });
