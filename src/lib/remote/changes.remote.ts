@@ -5,6 +5,7 @@ import { getRequestEvent } from '$app/server';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { Changes, type ChangeResult, change_in_schema } from '$lib/server/repositories/changes';
+import { pokeClients } from '$lib/server/poke';
 
 //const change_schema = createSelectSchema(local_schema.change);
 const batch_schema = z.array(change_in_schema);
@@ -29,7 +30,7 @@ export const processBatch = command(batch_schema, async (changes) => {
 			results.push(result);
 		}
 	});
-
+	pokeClients.pokeAll(client_id);
 	return { results } satisfies PushResponse;
 });
 

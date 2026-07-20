@@ -1,6 +1,7 @@
 import { and, eq, desc, gt, inArray } from 'drizzle-orm';
 import { type SQLiteTable, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { app_context as app } from '../app/app-context.svelte';
+import * as schema from '$lib/local/db/schema';
 import { store } from '../app/store.svelte';
 import type { ChangeInsert, Resource } from '../db/schema';
 import log from '$lib/logger.svelte';
@@ -15,10 +16,10 @@ const NO_COALESCE_FIELDS: Record<string, string[]> = {
 };
 
 const TABLES = {
-	resource: app.schema.resource,
-	user: app.schema.user,
-	space: app.schema.space,
-	space_user: app.schema.space_user
+	resource: schema.resource,
+	user: schema.user,
+	space: schema.space,
+	space_user: schema.space_user
 } as const satisfies Record<EnumSycnedTables, SQLiteTable & { id: SQLiteColumn }>;
 
 export class Changes {

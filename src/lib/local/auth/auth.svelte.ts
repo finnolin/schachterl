@@ -9,6 +9,7 @@ import { store } from '$lib/local/app/store.svelte';
 import log from '$lib/logger.svelte';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { poke_client } from '../sync/poke-client';
 
 //type ClientSession = NonNullable<Awaited<ReturnType<AuthClient['getSession']>>['data']>;
 function makeClient(base_url: string, validateSession: () => Promise<void>) {
@@ -117,11 +118,13 @@ class Auth {
 		if (db.user_id !== authed_id) {
 			await db.initialize(); // initialize() gets the user_id from store
 		}
+		await poke_client.connect();
 		log.app.debug('User + db OK');
 	}
 
 	async logout() {
 		log.auth.info('Logging out...');
+		poke_client.disconnect();
 		const result = await this.client?.signOut();
 		if (result?.data?.success) {
 			log.auth.debug('Logout successful.');

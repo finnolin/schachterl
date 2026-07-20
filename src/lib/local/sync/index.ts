@@ -19,7 +19,7 @@ class SyncClient {
 			do {
 				this.rerun = false;
 				await this.push();
-				// await this.pullChanges(); // next up
+				await this.pull(); // next up
 			} while (this.rerun);
 		} finally {
 			this.syncing = false;
