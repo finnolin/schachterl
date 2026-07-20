@@ -24,10 +24,11 @@ export class AppContext {
 		log.app.debug('Checking client ID...');
 		await store.getProperty('client_id');
 		if (!store.client_id) {
-			log.app.debug('Creating new client_id...');
+			log.app.info('Creating new client_id...');
 			const client_id = uuid();
 			await store.setProperty('client_id', client_id);
 		}
+		await store.getOrCreateLocalUserId();
 
 		// * 2. Set Server URL for web app
 		if (!this.is_tauri) {

@@ -1,6 +1,7 @@
 import { load } from '@tauri-apps/plugin-store';
 import { isTauri } from '@tauri-apps/api/core';
 import log from '$lib/logger.svelte';
+import { v7 as uuid } from 'uuid';
 
 class Store {
 	private is_tauri: boolean = false;
@@ -75,6 +76,15 @@ class Store {
 		}
 		(this[key] as Store[K]) = undefined as Store[K];
 		log.store.debug(key, 'deleted.');
+	}
+
+	async getOrCreateLocalUserId(): Promise<string> {
+		let id = await this.getProperty('user_id');
+		if (!id) {
+			id = uuid();
+			await this.setProperty('user_id', id);
+		}
+		return id;
 	}
 }
 

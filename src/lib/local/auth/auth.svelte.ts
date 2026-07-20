@@ -10,11 +10,7 @@ import log from '$lib/logger.svelte';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 
-type ClientSession = {
-	user: User;
-	session: Session;
-};
-
+//type ClientSession = NonNullable<Awaited<ReturnType<AuthClient['getSession']>>['data']>;
 function makeClient(base_url: string, validateSession: () => Promise<void>) {
 	return createAuthClient({
 		baseURL: base_url,
@@ -60,7 +56,7 @@ function makeClient(base_url: string, validateSession: () => Promise<void>) {
 }
 
 type AuthClient = ReturnType<typeof makeClient>;
-
+type ClientSession = AuthClient['$Infer']['Session'];
 class Auth {
 	private is_tauri: boolean = $state(isTauri());
 	session: ClientSession | null = $state(null);
@@ -108,6 +104,8 @@ class Auth {
 
 		const authed_id = this.session.user.id;
 		const stored_id = await store.getProperty('user_id');
+		console.log('setting client id: ', this.session.session.client_id);
+		await store.setProperty('client_id', this.session.session.client_id);
 
 		if (stored_id && stored_id !== authed_id) {
 			log.auth.warn('User id mismatch', { stored: stored_id, authed: authed_id });

@@ -215,6 +215,6 @@ log.hooks.setLevel('debug');
 log.auth = log.scope('auth', '#ff9900');
 log.auth.setLevel('debug');
 log.store = log.scope('store', '#db72bf');
-log.store.setLevel('debug');
+log.store.setLevel('info');
 
 export default log;

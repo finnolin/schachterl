@@ -8,7 +8,11 @@ import {
 	pgEnum,
 	integer,
 	pgSequence,
-	jsonb
+	jsonb,
+	primaryKey,
+	unique,
+	index,
+	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 
 // * Auth tables:
@@ -85,12 +89,13 @@ export const change = pgTable('change', {
 		startWith: 1,
 		increment: 1
 	}),
-
+	space_id: uuid('space_id'),
+	target_user_id: uuid('target_user_id'),
 	entity_type: text('entity_type').notNull(),
-	entity_id: text('entity_id').notNull(),
+	entity_id: uuid('entity_id').notNull(),
 
 	op: enum_change_operation().notNull(),
-	patch: jsonb('patch'),
+	patch: jsonb('patch').$type<Record<string, unknown>>(),
 
 	user_id: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
 	client_id: uuid('client_id').notNull(),
@@ -100,15 +105,67 @@ export const change = pgTable('change', {
 export type Change = typeof change.$inferSelect;
 
 export const enum_resource_type = pgEnum('resource_type', ['note']);
-export const resource = pgTable('resource', {
+export const resource = pgTable(
+	'resource',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		name: text('name').notNull().default('New Resource'),
+		space_id: uuid('space_id')
+			.notNull()
+			.references(() => space.id, { onDelete: 'cascade' }),
+		parent_id: uuid('parent_id').references((): AnyPgColumn => resource.id, {
+			onDelete: 'cascade'
+		}),
+		sort_order: text('sort_order').notNull(),
+		type: enum_resource_type().notNull(),
+		created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
+		updated_at: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date()),
+		deleted_at: timestamp('deleted_at', { withTimezone: true }),
+		version: integer('version').notNull().default(0)
+	},
+	(t) => [index('resource_space_id_idx').on(t.space_id)]
+);
+export type Resource = typeof resource.$inferSelect;
+
+export const space = pgTable('space', {
 	id: uuid('id').primaryKey().defaultRandom(),
-	type: enum_resource_type().notNull(),
+	name: text('name').notNull().default('New Space'),
+	created_by: uuid('created_by')
+		.notNull()
+		.references(() => user.id),
 	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
 	updated_at: timestamp('updated_at', { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date())
 		.$onUpdateFn(() => new Date()),
-	deleted_at: timestamp('deleted_at', { withTimezone: true }),
-	version: integer('version').notNull().default(0)
+	deleted_at: timestamp('deleted_at', { withTimezone: true })
 });
-export type Resource = typeof resource.$inferSelect;
+export type Space = typeof space.$inferSelect;
+
+export const space_role_enum = pgEnum('space_roles', ['owner', 'editor', 'viewer']);
+export const space_user = pgTable(
+	'space_user',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		space_id: uuid('space_id')
+			.notNull()
+			.references(() => space.id, { onDelete: 'cascade' }),
+		user_id: uuid('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		role: space_role_enum('role').notNull().default('viewer'),
+		created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updated_at: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(t) => [
+		unique('space_user_space_user_uq').on(t.space_id, t.user_id),
+		index('space_user_user_id_idx').on(t.user_id)
+	]
+);
+export type SpaceUser = typeof space_user.$inferSelect;

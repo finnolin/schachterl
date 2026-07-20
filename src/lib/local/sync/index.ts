@@ -1,6 +1,5 @@
 import { Changes } from '$lib/local/repositories/Changes';
 import { app_context } from '$lib/local/app/app-context.svelte';
-import { processBatch } from '$lib/remote/changes.remote';
 import { apiPost } from './api';
 
 class SyncClient {
@@ -50,8 +49,8 @@ class SyncClient {
 
 			// 2. SEND (never inside a transaction)
 			try {
-				const { results } = await apiPost('/api/v1/sync', batch);
-
+				const { results } = await apiPost('/api/v1/sync/push', batch);
+				console.log(results);
 				// 3a. process verdicts
 				const done_ids: string[] = [];
 				for (const result of results) {
@@ -81,6 +80,17 @@ class SyncClient {
 				console.error('Failed to push batch:', error);
 				break;
 			}
+		}
+	}
+	async pull() {
+		while (true) {
+			const { changes, cursor, has_more } = await apiPost('/api/v1/sync/pull', {
+				since: this.cursor ?? 0
+			});
+			if (changes.length === 0) break;
+			await new Changes().applyRemote(changes);
+			await this.setCursor(cursor);
+			if (!has_more) break;
 		}
 	}
 }

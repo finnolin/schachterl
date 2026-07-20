@@ -1,11 +1,25 @@
 import { and, eq, desc, gt, inArray } from 'drizzle-orm';
+import { type SQLiteTable, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { app_context as app } from '../app/app-context.svelte';
-import type { ChangeInsert } from '../db/schema';
+import { store } from '../app/store.svelte';
+import type { ChangeInsert, Resource } from '../db/schema';
 import log from '$lib/logger.svelte';
+import { coerce } from '$lib/utils';
+import { notify } from '../utils/invalidation';
+import { type Change as RemoteChange } from '$lib/server/db/schema';
+import { type EnumSycnedTables } from '../db/schema';
+import { tree } from '../utils/tree.svelte';
 
 const NO_COALESCE_FIELDS: Record<string, string[]> = {
 	resource: ['parent_id']
 };
+
+const TABLES = {
+	resource: app.schema.resource,
+	user: app.schema.user,
+	space: app.schema.space,
+	space_user: app.schema.space_user
+} as const satisfies Record<EnumSycnedTables, SQLiteTable & { id: SQLiteColumn }>;
 
 export class Changes {
 	async recordChange(change: ChangeInsert) {
@@ -95,5 +109,36 @@ export class Changes {
 	async deleteByIds(ids: string[]) {
 		if (ids.length === 0) return;
 		await app.db.delete(app.schema.change).where(inArray(app.schema.change.id, ids));
+	}
+
+	async applyRemote(changes: RemoteChange[]) {
+		const db = app.db;
+		const my_client_id = await store.getProperty('client_id');
+
+		for (const change of changes) {
+			if (change.client_id === my_client_id) continue; // already applied locally
+
+			const table = TABLES[change.entity_type as EnumSycnedTables];
+			const patch = coerce(change.patch);
+			console.log(change.id, change.op, change.client_id, my_client_id);
+			switch (change.op) {
+				case 'create':
+					await db.insert(table).values(patch).onConflictDoUpdate({ target: table.id, set: patch });
+					break;
+				case 'update':
+					await db.update(table).set(patch).where(eq(table.id, change.entity_id));
+					break;
+				case 'delete':
+					await db.delete(table).where(eq(table.id, change.entity_id));
+					break;
+			}
+
+			if (change.entity_type === 'resource') {
+				if (change.op === 'delete') tree.remove(change.entity_id);
+				else tree.upsert(coerce(change.patch) as Resource);
+			}
+		}
+
+		notify('resources', 'spaces');
 	}
 }

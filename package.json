@@ -65,6 +65,8 @@
 		"better-auth": "^1.7.0-rc.1",
 		"bits-ui": "^2.18.1",
 		"drizzle-orm": "^1.0.0-rc.4",
+		"fractional-indexing": "^4.0.0",
+		"fractional-indexing-jittered": "^1.0.0",
 		"mode-watcher": "^1.1.0",
 		"postgres": "^3.4.8",
 		"sqlocal": "^0.16.0",

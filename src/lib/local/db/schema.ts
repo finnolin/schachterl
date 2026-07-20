@@ -1,4 +1,12 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import {
+	sqliteTable,
+	text,
+	integer,
+	index,
+	primaryKey,
+	unique,
+	type AnySQLiteColumn
+} from 'drizzle-orm/sqlite-core';
 import { v7 as uuid } from 'uuid';
 
 export const drizzle_migrations = sqliteTable('__drizzle_migrations', {
@@ -26,14 +34,11 @@ export const user = sqliteTable('user', {
 	created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date())
 });
 
-export const enum_resource_types = ['note'] as const;
-export type EnumResourceType = (typeof enum_resource_types)[number];
-
-export const resource = sqliteTable('resource', {
+export const space = sqliteTable('space', {
 	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => uuid()),
-	type: text({ enum: enum_resource_types }),
+	name: text('name').notNull().default('New Space'),
 	created_at: integer('created_at', { mode: 'timestamp_ms' })
 		.notNull()
 		.$defaultFn(() => new Date()),
@@ -41,13 +46,80 @@ export const resource = sqliteTable('resource', {
 		.notNull()
 		.$defaultFn(() => new Date())
 		.$onUpdateFn(() => new Date()),
-	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' }),
-	version: integer('version').notNull().default(0)
+	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
 });
+export type Space = typeof space.$inferSelect;
+export type SpaceInsert = typeof space.$inferInsert;
+
+export const enum_space_roles = ['owner', 'editor', 'viewer'] as const;
+export type EnumSpaceRole = (typeof enum_space_roles)[number];
+
+export const space_user = sqliteTable(
+	'space_user',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => uuid()),
+		space_id: text('space_id')
+			.notNull()
+			.references(() => space.id, { onDelete: 'cascade' }),
+		user_id: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		role: text('role', { enum: enum_space_roles }).notNull().default('viewer'),
+		created_at: integer('created_at', { mode: 'timestamp_ms' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date())
+	},
+	(t) => [
+		unique('space_user_space_user_uq').on(t.space_id, t.user_id),
+		index('space_user_user_id_idx').on(t.user_id)
+	]
+);
+export type SpaceUser = typeof space_user.$inferSelect;
+export type SpaceUserInsert = typeof space_user.$inferInsert;
+
+export const enum_resource_types = ['note'] as const;
+export type EnumResourceType = (typeof enum_resource_types)[number];
+
+export const resource = sqliteTable(
+	'resource',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => uuid()),
+		space_id: text('space_id')
+			.notNull()
+			.references(() => space.id, { onDelete: 'cascade' }),
+		parent_id: text('parent_id').references((): AnySQLiteColumn => resource.id, {
+			onDelete: 'cascade'
+		}),
+		sort_order: text('sort_order').notNull(),
+		name: text('name').notNull().default('New Resource'),
+		type: text({ enum: enum_resource_types }),
+		created_at: integer('created_at', { mode: 'timestamp_ms' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+			.notNull()
+			.$defaultFn(() => new Date())
+			.$onUpdateFn(() => new Date()),
+		deleted_at: integer('deleted_at', { mode: 'timestamp_ms' }),
+		version: integer('version').notNull().default(0)
+	},
+	(t) => [
+		index('resource_space_id_idx').on(t.space_id),
+		index('resource_parent_sort_idx').on(t.parent_id, t.sort_order)
+	]
+);
 export type Resource = typeof resource.$inferSelect;
 export type ResourceInsert = typeof resource.$inferInsert;
 
-export const enum_synced_tables = ['resource', 'user'] as const;
+export const enum_synced_tables = ['resource', 'user', 'space', 'space_user'] as const;
 export type EnumSycnedTables = (typeof enum_synced_tables)[number];
 export const change = sqliteTable('change', {
 	seq: integer('seq').primaryKey({ autoIncrement: true }),
