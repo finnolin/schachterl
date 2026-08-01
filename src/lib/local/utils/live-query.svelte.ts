@@ -1,4 +1,3 @@
-// live-query.svelte.ts
 import { createSubscriber } from 'svelte/reactivity';
 import { subscribeToKeys } from './invalidation';
 

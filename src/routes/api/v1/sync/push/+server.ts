@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { processBatch } from '$lib/remote/changes.remote';
-
+import { processBatch, type PushRequest } from '$lib/remote/changes.remote';
 export async function POST({ request }) {
-	const body = await request.json();
+	const body: PushRequest = await request.json();
 	return json(await processBatch(body));
 }

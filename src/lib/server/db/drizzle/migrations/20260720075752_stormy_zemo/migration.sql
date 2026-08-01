@@ -1,2 +1,0 @@
-ALTER TABLE "change" ADD COLUMN "space_id" uuid;--> statement-breakpoint
-ALTER TABLE "change" ADD CONSTRAINT "change_space_id_space_id_fkey" FOREIGN KEY ("space_id") REFERENCES "space"("id") ON DELETE CASCADE;

@@ -264,6 +264,7 @@ export class DatabaseService {
 		const db_string = this.db_string || 'unknown';
 		await this.closeDBConnection(db_string);
 		this.drizzle_db = null;
+		app_context.closeDb();
 		this.db_connection = undefined;
 		this.user_id = undefined;
 	}

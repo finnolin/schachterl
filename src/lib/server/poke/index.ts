@@ -1,5 +1,6 @@
 // src/lib/server/poke.ts
 import type { Unsafe } from 'sveltekit-sse';
+import log from '$lib/logger.svelte';
 
 type Emit = (event: string, data: string) => Unsafe<void, Error>;
 
@@ -38,7 +39,7 @@ export const pokeClients = {
 		if (!set) return;
 		for (const conn of set) {
 			if (conn.client_id === except_client_id) continue;
-			const { error } = conn.emit('poke', '1');
+			const { error } = conn.emit('poke', String(Date.now()));
 			if (error) this.remove(user_id, conn); // Error is truthy, false is not
 		}
 	},
@@ -46,7 +47,7 @@ export const pokeClients = {
 	// in poke.ts
 	pokeAll(except_client_id?: string) {
 		const conns = [...connections.values()].flatMap((s) => [...s].map((c) => c.client_id));
-		console.log('pokeAll', { conns, except: except_client_id });
+		log.sync.debug('pokeAll', { conns, except: except_client_id });
 		for (const [user_id, set] of connections) {
 			for (const conn of set) {
 				if (conn.client_id === except_client_id) continue;

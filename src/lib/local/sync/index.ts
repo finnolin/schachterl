@@ -1,9 +1,10 @@
 import { Changes } from '$lib/local/repositories/Changes';
 import { app_context } from '$lib/local/app/app-context.svelte';
 import { apiPost } from './api';
+import log from '$lib/logger.svelte';
 
 class SyncClient {
-	private batch_size = 2;
+	private batch_size = 500;
 	private cursor: number | null = null;
 
 	private syncing = false;
@@ -16,6 +17,7 @@ class SyncClient {
 		}
 		this.syncing = true;
 		try {
+			log.sync.info('Syncing...');
 			do {
 				this.rerun = false;
 				await this.push();
@@ -83,15 +85,26 @@ class SyncClient {
 		}
 	}
 	async pull() {
+		log.sync.info('Starting pull...');
 		while (true) {
+			const old_cursor = Number((await app_context.getAppMeta('cursor')) ?? 0);
+			log.sync.debug('Pulling batch from', Number(old_cursor), '...');
 			const { changes, cursor, has_more } = await apiPost('/api/v1/sync/pull', {
-				since: this.cursor ?? 0
+				since: old_cursor ?? 0
 			});
+
 			if (changes.length === 0) break;
+			log.sync.debug('Processing ' + changes.length + ' changes...');
 			await new Changes().applyRemote(changes);
+			if (old_cursor != cursor) {
+				log.sync.info('Setting cursor to', cursor);
+			}
 			await this.setCursor(cursor);
-			if (!has_more) break;
+			if (!has_more) {
+				break;
+			}
 		}
+		log.sync.info('No more batches!');
 	}
 }
 

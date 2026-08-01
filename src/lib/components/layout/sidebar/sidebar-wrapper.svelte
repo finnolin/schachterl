@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import SidebarHandle from './sidebar-handle.svelte';
-	import { sidebar } from './sidebar_state.svelte';
 	import type { WithElementRef } from 'bits-ui';
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils';
@@ -24,10 +23,6 @@
 		{@render sidebar_content()}
 		<!-- <Resizable.Handle onmousedown={handleMouseDown} onmouseup={handleMouseUp} /> -->
 		<SidebarHandle />
-		<button
-			onclick={() => {
-				sidebar.toggle();
-			}}>BEB</button>
 		{@render children()}
 	</Resizable.PaneGroup>
 </div>

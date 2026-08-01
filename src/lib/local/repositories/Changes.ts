@@ -1,4 +1,4 @@
-import { and, eq, desc, gt, inArray } from 'drizzle-orm';
+import { and, eq, desc, inArray } from 'drizzle-orm';
 import { type SQLiteTable, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { app_context as app } from '../app/app-context.svelte';
 import * as schema from '$lib/local/db/schema';
@@ -17,9 +17,14 @@ const NO_COALESCE_FIELDS: Record<string, string[]> = {
 
 const TABLES = {
 	resource: schema.resource,
+	resource_type: schema.resource_type,
+	relationship_type: schema.relationship_type,
+	relationship: schema.relationship,
+	media: schema.media,
 	user: schema.user,
 	space: schema.space,
-	space_user: schema.space_user
+	space_user: schema.space_user,
+	space_resource_type: schema.space_resource_type
 } as const satisfies Record<EnumSycnedTables, SQLiteTable & { id: SQLiteColumn }>;
 
 export class Changes {
@@ -118,10 +123,10 @@ export class Changes {
 
 		for (const change of changes) {
 			if (change.client_id === my_client_id) continue; // already applied locally
-
+			log.sync.debug('processing change:', change.entity_type, change.op, change.id);
 			const table = TABLES[change.entity_type as EnumSycnedTables];
 			const patch = coerce(change.patch);
-			console.log(change.id, change.op, change.client_id, my_client_id);
+
 			switch (change.op) {
 				case 'create':
 					await db.insert(table).values(patch).onConflictDoUpdate({ target: table.id, set: patch });

@@ -20,3 +20,61 @@ export function coerce(patch: Record<string, unknown> | null): Record<string, un
 	}
 	return out;
 }
+
+export function generateRandomNoteTitle() {
+	const adjectives = [
+		'Meeting',
+		'Project',
+		'Quick',
+		'Daily',
+		'Weekly',
+		'Important',
+		'Personal',
+		'Work',
+		'Research',
+		'Travel',
+		'Recipe',
+		'Ideas',
+		'Shopping',
+		'Random',
+		'Draft',
+		'Final',
+		'Urgent',
+		'Study',
+		'Morning',
+		'Evening'
+	];
+
+	const subjects = [
+		'Notes',
+		'Plan',
+		'Checklist',
+		'Thoughts',
+		'Journal',
+		'Tasks',
+		'Summary',
+		'Brainstorm',
+		'Outline',
+		'Goals',
+		'Todo',
+		'Review',
+		'Budget',
+		'Schedule',
+		'Report',
+		'Memo',
+		'Ideas',
+		'Reference',
+		'Log',
+		'Collection'
+	];
+
+	const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+	const subject = subjects[Math.floor(Math.random() * subjects.length)];
+
+	// ~30% chance of appending a number
+	if (Math.random() < 0.3) {
+		return `${adjective} ${subject} ${Math.floor(Math.random() * 100) + 1}`;
+	}
+
+	return `${adjective} ${subject}`;
+}

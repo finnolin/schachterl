@@ -5,8 +5,11 @@ import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
 import log from '$lib/logger.svelte';
 import { env } from '$env/dynamic/public';
-
+import { seedSystemUser, seedBuiltins } from '$lib/server/db/seed';
 //const is_tauri = process.env.TAURI_BUILD === 'true';
+
+await seedSystemUser();
+await seedBuiltins();
 
 const TAURI_ORIGINS = ['http://tauri.localhost', 'https://tauri.localhost', 'tauri://localhost'];
 

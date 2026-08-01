@@ -181,6 +181,8 @@ interface CallableLogger extends Logger {
 	hooks: ScopedLogger;
 	auth: ScopedLogger;
 	store: ScopedLogger;
+	api: ScopedLogger;
+	sync: ScopedLogger;
 }
 
 // Create a callable logger by using a Proxy
@@ -211,10 +213,14 @@ log.db.setLevel('debug');
 log.app = log.scope('app', '#cf2d5b');
 log.app.setLevel('debug');
 log.hooks = log.scope('hooks', '#cf2d5b');
-log.hooks.setLevel('debug');
+log.hooks.setLevel('info');
 log.auth = log.scope('auth', '#ff9900');
 log.auth.setLevel('debug');
 log.store = log.scope('store', '#db72bf');
 log.store.setLevel('info');
+log.api = log.scope('api', '#cf2d5b');
+log.api.setLevel('info');
+log.sync = log.scope('sync', '#fcba03');
+log.sync.setLevel('debug');
 
 export default log;

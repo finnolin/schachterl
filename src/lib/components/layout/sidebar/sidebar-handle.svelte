@@ -44,6 +44,6 @@
 	onmouseup={handleMouseUp}
 	onDraggingChange={toggleDragging}
 	class={cn(
-		'relative w-px bg-border transition-colors duration-100 delay-20 after:absolute after:inset-y-0 after:start-1/2 after:w-1.5 after:transition-all after:delay-20 after:duration-100 hover:after:bg-border',
+		'relative w-px bg-border transition-colors duration-100 delay-20 after:absolute after:inset-y-0 after:start-1/2 after:w-2 after:transition-all after:delay-20 after:duration-100 hover:after:bg-border',
 		sidebar.is_collapsed ? 'after:translate-x-0' : 'after:-translate-x-1/2'
 	)} />

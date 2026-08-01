@@ -1,14 +1,13 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { app_context } from '$lib/local/app/app-context.svelte';
 	import { store } from '$lib/local/app/store.svelte';
 	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
-	import { auth } from '$lib/local/auth/auth.svelte';
-	import log from '$lib/logger.svelte';
-
+	import PageHeader from '$lib/components/ui/page/page-header.svelte';
+	import UserIndicator from '$lib/components/elements/user-popover/user-indicator.svelte';
 	//Components:
 	// import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	// import AppSidebar from '$lib/components/app-sidebar.svelte';
@@ -16,6 +15,9 @@
 	import { ModeWatcher } from 'mode-watcher';
 	import SidebarWrapper from '$lib/components/layout/sidebar/sidebar-wrapper.svelte';
 	import SidebarMain from '$lib/components/layout/sidebar/sidebar-main.svelte';
+	//import SidebarToggle from '$lib/components/layout/sidebar/sidebar-toggle.svelte';
+	import PageContent from '$lib/components/ui/page/page-content.svelte';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	let { children } = $props();
 	let is_ready = $state(false);
@@ -35,45 +37,28 @@
 			console.error('Failed to initialize database:', error);
 		}
 	});
-
-	async function logout() {
-		await auth.logout();
-	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<UserIndicator />
 <ModeWatcher />
-<!-- <Sidebar.Provider>
-	<AppSidebar />
-	<Sidebar.Inset>
-		<main>
-			<Sidebar.Trigger />
-			<div class="flex w-full h-10 p-2 gap-2" data-sveltekit-preload-data="false">
-				<a href="/">Home</a>
-				<a href="/test">Test</a>
-				{#if app_context.session}
-					<button onclick={logout}>Logout</button>
-				{:else}
-					<a href="/login">Login</a>
-				{/if}
-			</div>
+{#if app_context.drizzle_db}
+	{#if is_ready}
+		<SidebarWrapper frame={false}>
+			{#snippet sidebar_content()}
+				<AppSidebar />
+			{/snippet}
 
-			{#if is_ready}
-				{@render children?.()}
-			{:else}
-				<div>Setting up database...</div>
-			{/if}
-		</main>
-	</Sidebar.Inset>
-</Sidebar.Provider> -->
-{#if is_ready}
-	<SidebarWrapper frame={false}>
-		{#snippet sidebar_content()}
-			<AppSidebar />
-		{/snippet}
-
-		<SidebarMain>
-			{@render children?.()}
-		</SidebarMain>
-	</SidebarWrapper>
+			<SidebarMain>
+				<PageHeader />
+				<PageContent>
+					{@render children?.()}
+				</PageContent>
+			</SidebarMain>
+		</SidebarWrapper>
+	{/if}
+{:else}
+	<div class="flex h-screen w-full flex-col items-center justify-center">
+		<Spinner class="size-7" />
+	</div>
 {/if}

@@ -9,11 +9,36 @@ import { relations } from '$lib/local/db/relations';
 import { store } from '$lib/local/app/store.svelte';
 import { auth } from '$lib/local/auth/auth.svelte';
 import { env } from '$env/dynamic/public';
+import { tree } from '../utils/tree.svelte';
+import { Spaces } from '../repositories/Spaces';
+import { Resources } from '../repositories/Resources';
+import { LiveQuery } from '../utils/live-query.svelte';
+import type { Space, RelationshipType, ResourceType } from '$lib/local/db/schema';
+import { notify } from '../utils/invalidation';
+import { SvelteMap } from 'svelte/reactivity';
+import { page } from '$app/state';
 
+type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
+type Resource = Awaited<ReturnType<Resources['getResourceById']>>;
+
+type Focus = {
+	id: string;
+	type: 'space' | 'resource';
+};
 export class AppContext {
 	private Database: DatabaseService = local_db;
-	private drizzle_db: SqliteRemoteDatabase<typeof relations> | null = $state(null);
+	drizzle_db: SqliteRemoteDatabase<typeof relations> | null = $state(null);
 	private drizzle_schema = schema;
+
+	private space_cache = new SvelteMap<string, SpaceWithTypes>();
+	private resource_cache = new SvelteMap<string, Resource>();
+
+	current_space: SpaceWithTypes | undefined = $state();
+	spaces_query: LiveQuery<Space[]> | null = $state(null);
+	resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
+
+	focus: Focus | undefined = $state();
+	focused_item: SpaceWithTypes | Resource | undefined = $state();
 
 	is_tauri: boolean = $state(isTauri());
 
@@ -44,6 +69,13 @@ export class AppContext {
 			log.app.debug('No Server URL set. Initialize Local DB with offline user...');
 			await this.Database.initialize();
 		}
+		this.initQueries();
+	}
+
+	private initQueries() {
+		this.spaces_query ??= new LiveQuery(['spaces'], () => new Spaces().getSpaces());
+		notify('spaces'); // refetch now that db exists
+		// this.resource_types_query ??= new
 	}
 
 	async setServer(server_url: string) {
@@ -69,8 +101,6 @@ export class AppContext {
 
 	async getAppMeta(property_name: string) {
 		if (!this.drizzle_db) return;
-		console.log('get meta', property_name);
-
 		const [property] = await this.drizzle_db
 			.select()
 			.from(schema.app_meta)
@@ -100,6 +130,10 @@ export class AppContext {
 		this.drizzle_db = db;
 	}
 
+	closeDb() {
+		this.drizzle_db = null;
+	}
+
 	get db() {
 		if (!this.drizzle_db) {
 			throw new Error('Database not initialized. Call initialize() first.');
@@ -112,6 +146,62 @@ export class AppContext {
 			throw new Error('No schema found');
 		}
 		return this.drizzle_schema;
+	}
+
+	// async setSpace(space: Space) {
+	// 	log.app.debug('Changing space to:', space.name, space.id);
+	// 	await tree.load(space.id);
+	// 	this.current_space = space;
+	// }
+
+	async setSpaceById(space_id: string) {
+		// tree always follows the current space, cached or not
+
+		if (tree.space_id !== space_id) {
+			await tree.load(space_id);
+		}
+
+		// data fetch is what the cache guards
+		if (!this.space_cache.has(space_id)) {
+			log.app.debug('Loading space:', space_id);
+			const space = await new Spaces().getSpaceById(space_id);
+			if (space) this.space_cache.set(space_id, space);
+		}
+	}
+
+	async setFocus(focus: Focus) {
+		this.focus = focus;
+		if (focus.type === 'space') {
+			await this.setSpaceById(focus.id);
+		} else {
+			const resource = await new Resources().getResourceById(focus.id);
+			if (resource) {
+				this.resource_cache.set(focus.id, resource);
+				await this.setSpaceById(resource.space_id);
+			}
+		}
+	}
+
+	async clearFocus() {
+		this.current_space = undefined;
+		this.focus = undefined;
+		this.focused_item = undefined;
+	}
+
+	get space() {
+		if (this.focus?.type === 'space') return this.space_cache.get(this.focus.id);
+		if (this.focus?.type === 'resource') {
+			const r = this.resource_cache.get(this.focus.id);
+			return r ? this.space_cache.get(r.space_id) : undefined;
+		}
+		return undefined;
+	}
+
+	get focused() {
+		if (!this.focus) return undefined;
+		return this.focus.type === 'space'
+			? this.space_cache.get(this.focus.id)
+			: this.resource_cache.get(this.focus.id);
 	}
 }
 

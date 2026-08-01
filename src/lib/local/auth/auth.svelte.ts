@@ -9,7 +9,7 @@ import { store } from '$lib/local/app/store.svelte';
 import log from '$lib/logger.svelte';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { poke_client } from '../sync/poke-client';
+import { server_connection } from '../sync/poke-client.svelte';
 
 //type ClientSession = NonNullable<Awaited<ReturnType<AuthClient['getSession']>>['data']>;
 function makeClient(base_url: string, validateSession: () => Promise<void>) {
@@ -62,6 +62,7 @@ class Auth {
 	private is_tauri: boolean = $state(isTauri());
 	session: ClientSession | null = $state(null);
 	client: AuthClient | null = null;
+	user: User | null = null;
 
 	async initialize() {
 		if (!store.server_url) {
@@ -91,7 +92,7 @@ class Auth {
 		}
 		this.session = session.data;
 
-		log.app.debug('Session OK!');
+		log.auth.debug('Session OK!');
 		await this.validateUser();
 	}
 
@@ -104,8 +105,8 @@ class Auth {
 		}
 
 		const authed_id = this.session.user.id;
+		this.user = this.session.user;
 		const stored_id = await store.getProperty('user_id');
-		console.log('setting client id: ', this.session.session.client_id);
 		await store.setProperty('client_id', this.session.session.client_id);
 
 		if (stored_id && stored_id !== authed_id) {
@@ -118,13 +119,13 @@ class Auth {
 		if (db.user_id !== authed_id) {
 			await db.initialize(); // initialize() gets the user_id from store
 		}
-		await poke_client.connect();
-		log.app.debug('User + db OK');
+		log.auth.debug('User + db OK');
+		await server_connection.connect();
 	}
 
 	async logout() {
 		log.auth.info('Logging out...');
-		poke_client.disconnect();
+		server_connection.disconnect();
 		const result = await this.client?.signOut();
 		if (result?.data?.success) {
 			log.auth.debug('Logout successful.');

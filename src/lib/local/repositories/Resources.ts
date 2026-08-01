@@ -1,12 +1,23 @@
 import { Changes } from './Changes';
-import { type ResourceInsert } from '../db/schema';
+import { type ResourceInsert, type Resource } from '../db/schema';
 import { app_context as app } from '../app/app-context.svelte';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull, asc, desc, type SQLWrapper, type SQL } from 'drizzle-orm';
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 import { generateKeyBetween, generateJitteredKeyBetween } from 'fractional-indexing-jittered';
 import { tree } from '$lib/local/utils/tree.svelte';
 import { notify } from '../utils/invalidation';
 
+type ResourceFilter = Partial<Pick<Resource, 'parent_id' | 'space_id'>>;
+
+type ResourceSortField = 'updated_at' | 'sort_order';
+
+type ResourceQueryOptions = {
+	filter?: ResourceFilter;
+	sort?: { by: ResourceSortField; dir?: 'asc' | 'desc' };
+	limit?: number;
+	offset?: number;
+};
 export class Resources {
 	private schema = app.schema;
 
@@ -59,6 +70,46 @@ export class Resources {
 			.select()
 			.from(this.schema.resource)
 			.where(eq(this.schema.resource.space_id, space_id));
+	}
+
+	async getChildResources(parent_id: string = '') {
+		const db = app.db;
+		const table = this.schema.resource;
+		return db.select().from(table).where(eq(table.parent_id, parent_id));
+	}
+
+	async getResourceById(resource_id: string) {
+		const t = app.schema.resource;
+		const [resource] = await app.db.select().from(t).where(eq(t.id, resource_id));
+		return resource;
+	}
+
+	async getResources(options: ResourceQueryOptions = {}) {
+		const table = app.schema.resource;
+
+		const conditions: SQL[] = [isNull(table.deleted_at)];
+
+		for (const [key, value] of Object.entries(options.filter ?? {})) {
+			if (value === undefined) continue;
+			const col = table[key as keyof ResourceFilter] as SQLiteColumn;
+			conditions.push(value === null ? isNull(col) : eq(col, value));
+		}
+
+		let query = app.db
+			.select()
+			.from(table)
+			.where(and(...conditions))
+			.$dynamic();
+
+		if (options.sort) {
+			const col = table[options.sort.by];
+			query = query.orderBy(options.sort.dir === 'desc' ? desc(col) : asc(col));
+		}
+
+		if (options.limit !== undefined) query = query.limit(options.limit);
+		if (options.offset !== undefined) query = query.offset(options.offset);
+
+		return await query;
 	}
 
 	async moveUp(id: string, parent_id: string | null, space_id: string) {

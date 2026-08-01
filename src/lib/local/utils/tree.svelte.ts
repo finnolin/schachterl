@@ -2,17 +2,20 @@ import { type Resource } from '$lib/local/db/schema';
 import { Resources, compareResources } from '$lib/local/repositories/Resources';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { subscribeToKeys } from './invalidation';
+import { app_context } from '../app/app-context.svelte';
 
 export type TreeNode = Resource & { children: TreeNode[] };
 
 class TreeStore {
 	rows = new SvelteMap<string, Resource>();
 	space_id = $state<string | null>(null);
+	open_nodes = new SvelteSet();
 	loading = $state(false);
 	#unsub: (() => void) | null = null;
 
 	async load(space_id: string) {
 		this.#unsub?.();
+		this.open_nodes = new SvelteSet();
 		this.space_id = space_id;
 		await this.#refetch();
 		this.#unsub = subscribeToKeys(['resources', `resources:space:${space_id}`], () =>
@@ -79,6 +82,20 @@ class TreeStore {
 			current = row.parent_id;
 		}
 		return path;
+	}
+
+	openNode(id: string) {
+		this.open_nodes.add(id);
+	}
+	closeNode(id: string) {
+		this.open_nodes.delete(id);
+	}
+	toggleNode(id: string) {
+		if (this.open_nodes.has(id)) {
+			this.closeNode(id);
+		} else {
+			this.openNode(id);
+		}
 	}
 }
 

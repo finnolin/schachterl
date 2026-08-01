@@ -1,13 +1,13 @@
 import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins';
-import { createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { db, schema } from '$lib/server/db';
+import { sql, ne, eq } from 'drizzle-orm';
 import * as tables from '$lib/server/db/schema';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/public';
+import { SYSTEM_USER_ID } from '$lib/local/utils/ids';
 
 export const auth = betterAuth({
 	baseURL: env.PUBLIC_BASE_URL!,
@@ -37,6 +37,14 @@ export const auth = betterAuth({
 			updatedAt: 'updated_at'
 			//banExpires: 'ban_expires',
 			//banReason: 'ban_reason'
+		},
+		additionalFields: {
+			role: {
+				type: 'string',
+				required: true,
+				input: false,
+				defaultValue: 'user'
+			}
 		}
 	},
 	session: {
@@ -89,6 +97,21 @@ export const auth = betterAuth({
 		}
 	},
 	databaseHooks: {
+		user: {
+			create: {
+				after: async (user) => {
+					const [{ count }] = await db
+						.select({ count: sql<number>`count(*)` })
+						.from(schema.user)
+						.where(ne(schema.user.id, SYSTEM_USER_ID));
+
+					// this user + system user; if it's the only real user, promote
+					if (count === 1) {
+						await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, user.id));
+					}
+				}
+			}
+		},
 		session: {
 			create: {
 				before: async (session, ctx) => ({
