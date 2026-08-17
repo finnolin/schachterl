@@ -16,7 +16,6 @@ import { LiveQuery } from '../utils/live-query.svelte';
 import type { Space, RelationshipType, ResourceType } from '$lib/local/db/schema';
 import { notify } from '../utils/invalidation';
 import { SvelteMap } from 'svelte/reactivity';
-import { page } from '$app/state';
 
 type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
 type Resource = Awaited<ReturnType<Resources['getResourceById']>>;
@@ -26,16 +25,19 @@ type Focus = {
 	type: 'space' | 'resource';
 };
 export class AppContext {
+
 	private Database: DatabaseService = local_db;
 	drizzle_db: SqliteRemoteDatabase<typeof relations> | null = $state(null);
 	private drizzle_schema = schema;
 
-	private space_cache = new SvelteMap<string, SpaceWithTypes>();
-	private resource_cache = new SvelteMap<string, Resource>();
+	// private space_cache = new SvelteMap<string, SpaceWithTypes>();
+	// private resource_cache = new SvelteMap<string, Resource>();
 
 	current_space: SpaceWithTypes | undefined = $state();
 	spaces_query: LiveQuery<Space[]> | null = $state(null);
-	resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
+  resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
+
+  loading_space: boolean = $state(false);
 
 	focus: Focus | undefined = $state();
 	focused_item: SpaceWithTypes | Resource | undefined = $state();
@@ -153,34 +155,35 @@ export class AppContext {
 	// 	await tree.load(space.id);
 	// 	this.current_space = space;
 	// }
+	//
+
+  async setSpace(space_id: string) {
+    await this.setSpaceById(space_id);
+    return this.current_space;
+	}
 
 	async setSpaceById(space_id: string) {
-		// tree always follows the current space, cached or not
-
 		if (tree.space_id !== space_id) {
 			await tree.load(space_id);
 		}
-
-		// data fetch is what the cache guards
-		if (!this.space_cache.has(space_id)) {
-			log.app.debug('Loading space:', space_id);
-			const space = await new Spaces().getSpaceById(space_id);
-			if (space) this.space_cache.set(space_id, space);
-		}
+    const space = await new Spaces().getSpaceById(space_id);
+    this.current_space = space;
 	}
 
-	async setFocus(focus: Focus) {
+  async setFocus(focus: Focus) {
+    this.loading_space = true;
 		this.focus = focus;
 		if (focus.type === 'space') {
 			await this.setSpaceById(focus.id);
 		} else {
 			const resource = await new Resources().getResourceById(focus.id);
 			if (resource) {
-				this.resource_cache.set(focus.id, resource);
 				await this.setSpaceById(resource.space_id);
 			}
-		}
-	}
+    }
+    this.loading_space = false;
+  }
+
 
 	async clearFocus() {
 		this.current_space = undefined;
@@ -189,19 +192,12 @@ export class AppContext {
 	}
 
 	get space() {
-		if (this.focus?.type === 'space') return this.space_cache.get(this.focus.id);
-		if (this.focus?.type === 'resource') {
-			const r = this.resource_cache.get(this.focus.id);
-			return r ? this.space_cache.get(r.space_id) : undefined;
-		}
-		return undefined;
+    return this.current_space;
 	}
 
 	get focused() {
 		if (!this.focus) return undefined;
-		return this.focus.type === 'space'
-			? this.space_cache.get(this.focus.id)
-			: this.resource_cache.get(this.focus.id);
+    return this.focus;
 	}
 }
 

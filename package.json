@@ -66,7 +66,7 @@
 	"dependencies": {
 		"@tauri-apps/plugin-sql": "^2.3.1",
 		"@tauri-apps/plugin-store": "^2.4.2",
-		"better-auth": "^1.7.0-rc.1",
+		"better-auth": "^1.7.0-rc.4",
 		"bits-ui": "^2.18.1",
 		"drizzle-orm": "^1.0.0-rc.4",
 		"fractional-indexing": "^4.0.0",
@@ -77,15 +77,15 @@
 		"uuid": "^13.0.0",
 		"zod": "^4.4.3"
 	},
+	"allowScripts": {
+		"esbuild@0.18.20": true,
+		"esbuild@0.25.12": true,
+		"esbuild@0.27.2": true
+	},
 	"overrides": {
 		"better-auth": {
 			"drizzle-kit": "1.0.0-rc.4",
 			"drizzle-orm": "$drizzle-orm"
 		}
-	},
-	"allowScripts": {
-		"esbuild@0.18.20": true,
-		"esbuild@0.25.12": true,
-		"esbuild@0.27.2": true
 	}
 }

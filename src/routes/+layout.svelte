@@ -52,7 +52,12 @@
 			<SidebarMain>
 				<PageHeader />
 				<PageContent>
-					{@render children?.()}
+					<svelte:boundary>
+						{@render children?.()}
+						{#snippet pending()}
+							<div class="w-40 h-40 bg-red-600">Loading...</div>
+						{/snippet}
+					</svelte:boundary>
 				</PageContent>
 			</SidebarMain>
 		</SidebarWrapper>
