@@ -1,14 +1,13 @@
 import { and, eq, desc, inArray } from 'drizzle-orm';
 import { type SQLiteTable, type SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { app_context as app } from '../app/app-context.svelte';
-import * as schema from '$lib/local/db/schema';
+import * as schema from '#lib/local/db/schema.js';
 import { store } from '../app/store.svelte';
-import type { ChangeInsert, Resource } from '../db/schema';
-import log from '$lib/logger.svelte';
-import { coerce } from '$lib/utils';
+import { type ChangeInsert, type Resource, type EnumSycnedTables } from '../db/schema';
+import log from '#lib/logger.svelte.js';
+import { coerce } from '#lib/utils.js';
 import { notify } from '../utils/invalidation';
-import { type Change as RemoteChange } from '$lib/server/db/schema';
-import { type EnumSycnedTables } from '../db/schema';
+import type { Change as RemoteChange } from '#lib/server/db/schema.js';
 import { tree } from '../utils/tree.svelte';
 
 const NO_COALESCE_FIELDS: Record<string, string[]> = {

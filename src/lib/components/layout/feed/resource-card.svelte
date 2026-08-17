@@ -1,10 +1,10 @@
 <script lang="ts">
-	import * as Item from '$lib/components/ui/item/index.js';
-	import { LiveQuery } from '$lib/local/utils/live-query.svelte';
-	import { Resources } from '$lib/local/repositories/Resources';
-	import type { Space } from '$lib/local/db/schema';
-	import { app_context as app } from '$lib/local/app/app-context.svelte';
-	import { generateRandomNoteTitle } from '$lib/utils';
+	import * as Item from '#lib/components/ui/item/index.js';
+	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { Resources } from '#lib/local/repositories/Resources.js';
+	import type { Space } from '#lib/local/db/schema.js';
+	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
+	import { generateRandomNoteTitle } from '#lib/utils.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	let { space }: { space: Space } = $props();

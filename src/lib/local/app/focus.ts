@@ -5,5 +5,5 @@ type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
 
 // use-space.ts
 export function useSpace(): () => Promise<SpaceWithTypes> {
-  return getContext<() => Promise<SpaceWithTypes>>('space');
+	return getContext<() => Promise<SpaceWithTypes>>('space');
 }

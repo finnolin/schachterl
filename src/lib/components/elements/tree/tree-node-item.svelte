@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { tree, type TreeNode } from '$lib/local/utils/tree.svelte';
-	import { app_context as app } from '$lib/local/app/app-context.svelte';
-	import { Resources } from '$lib/local/repositories/Resources';
+	import Button from '#lib/components/ui/button/button.svelte';
+	import { tree, type TreeNode } from '#lib/local/utils/tree.svelte.js';
+	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
+	import { Resources } from '#lib/local/repositories/Resources.js';
 	import type { Snippet } from 'svelte';
 	import ChevronDownIcon from '~icons/tabler/chevron-down';
 	import ChevronRightIcon from '~icons/tabler/chevron-right';
 	import Plus from '~icons/tabler/plus';
 	import TreeNodeMenu from './tree-node-menu.svelte';
-	import { cn, generateRandomNoteTitle } from '$lib/utils';
+	import { cn, generateRandomNoteTitle } from '#lib/utils.js';
 	let { node, children }: { node: TreeNode; children?: Snippet } = $props();
 
 	let open = $derived(tree.open_nodes.has(node.id));

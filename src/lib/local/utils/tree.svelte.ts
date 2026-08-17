@@ -1,5 +1,5 @@
-import { type Resource } from '$lib/local/db/schema';
-import { Resources, compareResources } from '$lib/local/repositories/Resources';
+import { type Resource } from '#lib/local/db/schema.js';
+import { Resources, compareResources } from '#lib/local/repositories/Resources.js';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { subscribeToKeys } from './invalidation';
 import { app_context } from '../app/app-context.svelte';

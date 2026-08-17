@@ -2,11 +2,11 @@ import type { Session, User } from 'better-auth';
 import { createAuthClient } from 'better-auth/svelte';
 import { inferAdditionalFields } from 'better-auth/client/plugins';
 import { isTauri } from '@tauri-apps/api/core';
-import { env } from '$env/dynamic/public';
-import type { auth as AuthServer } from '$lib/server/auth';
-import { local_db as db } from '$lib/local/db';
-import { store } from '$lib/local/app/store.svelte';
-import log from '$lib/logger.svelte';
+import { PUBLIC_BASE_URL } from '$app/env/public';
+import type { auth as AuthServer } from '#lib/server/auth/index.js';
+import { local_db as db } from '#lib/local/db/index.js';
+import { store } from '#lib/local/app/store.svelte.js';
+import log from '#lib/logger.svelte.js';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { server_connection } from '../sync/poke-client.svelte';
@@ -74,9 +74,9 @@ class Auth {
 	}
 
 	private createClient(server_url?: string) {
-		const base_url = server_url || env.PUBLIC_BASE_URL!;
-		log.auth.debug('Create auth client for server: ', base_url);
+		const base_url = server_url || PUBLIC_BASE_URL!;
 
+		log.auth.debug('Create auth client for server: ', base_url);
 		this.client = makeClient(base_url, () => this.validateSession());
 	}
 
@@ -100,7 +100,7 @@ class Auth {
 		if (!this.session) {
 			// no session: stored id or not, go to login
 			log.auth.info(store.user_id ? 'No session but user ID found' : 'No user ID found');
-			goto(resolve('/auth/login'));
+			goto(resolve('auth/login'));
 			return;
 		}
 

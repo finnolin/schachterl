@@ -14,7 +14,7 @@ import {
 	index,
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
-import type { ResourceFieldConfig } from '$lib/local/db/schema';
+import type { ResourceFieldConfig } from '#lib/local/db/schema.js';
 
 // * Auth tables:
 export const user_role_enum = pgEnum('user_roles', ['user', 'admin']);

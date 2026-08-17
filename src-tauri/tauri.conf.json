@@ -18,7 +18,6 @@
 				"maximized": true,
 				"resizable": true,
 				"fullscreen": false,
-				"decorations": false,
 				"devtools": true
 			}
 		],

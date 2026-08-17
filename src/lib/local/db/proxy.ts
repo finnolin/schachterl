@@ -3,7 +3,7 @@ import Database from '@tauri-apps/plugin-sql';
 import { SQLocalDrizzle } from 'sqlocal/drizzle';
 import * as schema from './schema';
 import { relations } from './relations';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 
 async function getTauriDb(db_name: string) {
 	return await Database.load(db_name);

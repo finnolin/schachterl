@@ -1,21 +1,17 @@
 import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db, schema } from '$lib/server/db';
+import { db, schema } from '#lib/server/db/index.js';
 import { sql, ne, eq } from 'drizzle-orm';
-import * as tables from '$lib/server/db/schema';
+import * as tables from '#lib/server/db/schema.js';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
-import { env } from '$env/dynamic/public';
-import { SYSTEM_USER_ID } from '$lib/local/utils/ids';
+import { PUBLIC_BASE_URL } from '$app/env/public';
+import { SYSTEM_USER_ID } from '#lib/local/utils/ids.js';
 
 export const auth = betterAuth({
-	baseURL: env.PUBLIC_BASE_URL!,
-	database: drizzleAdapter(db, {
-		provider: 'pg',
-		schema: tables
-	}),
-
+	baseURL: PUBLIC_BASE_URL!,
+	database: drizzleAdapter(db, { provider: 'pg', schema: tables }),
 	advanced: {
 		database: {
 			generateId: false // disable automatic ID generation,
@@ -101,7 +97,7 @@ export const auth = betterAuth({
 			create: {
 				after: async (user) => {
 					const [{ count }] = await db
-						.select({ count: sql<number>`count(*)` })
+						.select({ count: sql`count(*)` })
 						.from(schema.user)
 						.where(ne(schema.user.id, SYSTEM_USER_ID));
 

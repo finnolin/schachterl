@@ -10,7 +10,7 @@ import { relations } from './relations';
 import { app_context } from '../app/app-context.svelte';
 
 import { SQLocal } from 'sqlocal';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 
 const db_name_default = 'local';
 const db_name_string = 'sqlite:' + db_name_default + '.db';

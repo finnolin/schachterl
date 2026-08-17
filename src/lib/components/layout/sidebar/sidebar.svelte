@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import type { Pane } from '$lib/components/ui/resizable/index.js';
+	import * as Resizable from '#lib/components/ui/resizable/index.js';
+	import type { Pane } from '#lib/components/ui/resizable/index.js';
 	import { sidebar } from './sidebar_state.svelte';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
 	function setServer() {
 		app_context.setServer('http://localhost:5173');
 	}

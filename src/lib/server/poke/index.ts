@@ -1,6 +1,6 @@
 // src/lib/server/poke.ts
 import type { Unsafe } from 'sveltekit-sse';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 
 type Emit = (event: string, data: string) => Unsafe<void, Error>;
 

@@ -30,9 +30,10 @@
 		"@iconify-json/tabler": "^1.2.37",
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.27.0",
-		"@sveltejs/adapter-node": "^5.5.7",
-		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.69.3",
+		"@sveltejs/adapter-node": "next",
+		"@sveltejs/adapter-static": "next",
+		"@sveltejs/kit": "next",
+		"@sveltejs/load-config": "^0.2.2",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.3.2",
@@ -52,7 +53,7 @@
 		"prettier-plugin-tailwindcss": "^0.8.1",
 		"rimraf": "^6.1.2",
 		"svelte": "^5.56.5",
-		"svelte-check": "^4.7.3",
+		"svelte-check": "^4.7.5",
 		"sveltekit-sse": "^0.15.1",
 		"tailwind-merge": "^3.4.0",
 		"tailwind-variants": "^3.2.2",
@@ -87,5 +88,9 @@
 			"drizzle-kit": "1.0.0-rc.4",
 			"drizzle-orm": "$drizzle-orm"
 		}
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
 	}
 }

@@ -1,19 +1,19 @@
-import { local_db, DatabaseService } from '$lib/local/db';
+import { local_db, DatabaseService } from '#lib/local/db/index.js';
 import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
 import { v7 as uuid } from 'uuid';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 import { eq } from 'drizzle-orm';
 import { isTauri } from '@tauri-apps/api/core';
-import * as schema from '$lib/local/db/schema';
-import { relations } from '$lib/local/db/relations';
-import { store } from '$lib/local/app/store.svelte';
-import { auth } from '$lib/local/auth/auth.svelte';
-import { env } from '$env/dynamic/public';
+import * as schema from '#lib/local/db/schema.js';
+import { relations } from '#lib/local/db/relations.js';
+import { store } from '#lib/local/app/store.svelte.js';
+import { auth } from '#lib/local/auth/auth.svelte.js';
+import { PUBLIC_BASE_URL } from '$app/env/public';
 import { tree } from '../utils/tree.svelte';
 import { Spaces } from '../repositories/Spaces';
 import { Resources } from '../repositories/Resources';
 import { LiveQuery } from '../utils/live-query.svelte';
-import type { Space, RelationshipType, ResourceType } from '$lib/local/db/schema';
+import type { Space, RelationshipType, ResourceType } from '#lib/local/db/schema.js';
 import { notify } from '../utils/invalidation';
 import { SvelteMap } from 'svelte/reactivity';
 
@@ -25,7 +25,6 @@ type Focus = {
 	type: 'space' | 'resource';
 };
 export class AppContext {
-
 	private Database: DatabaseService = local_db;
 	drizzle_db: SqliteRemoteDatabase<typeof relations> | null = $state(null);
 	private drizzle_schema = schema;
@@ -35,9 +34,9 @@ export class AppContext {
 
 	current_space: SpaceWithTypes | undefined = $state();
 	spaces_query: LiveQuery<Space[]> | null = $state(null);
-  resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
+	resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
 
-  loading_space: boolean = $state(false);
+	loading_space: boolean = $state(false);
 
 	focus: Focus | undefined = $state();
 	focused_item: SpaceWithTypes | Resource | undefined = $state();
@@ -60,7 +59,7 @@ export class AppContext {
 		// * 2. Set Server URL for web app
 		if (!this.is_tauri) {
 			log.app.debug('Webapp: Overwriting server_url...');
-			await store.setProperty('server_url', env.PUBLIC_BASE_URL!);
+			await store.setProperty('server_url', PUBLIC_BASE_URL!);
 		}
 
 		// * 3. If no Server URL exits we can skip auth entirely and immediately initialize the local db
@@ -157,21 +156,21 @@ export class AppContext {
 	// }
 	//
 
-  async setSpace(space_id: string) {
-    await this.setSpaceById(space_id);
-    return this.current_space;
+	async setSpace(space_id: string) {
+		await this.setSpaceById(space_id);
+		return this.current_space;
 	}
 
 	async setSpaceById(space_id: string) {
 		if (tree.space_id !== space_id) {
 			await tree.load(space_id);
 		}
-    const space = await new Spaces().getSpaceById(space_id);
-    this.current_space = space;
+		const space = await new Spaces().getSpaceById(space_id);
+		this.current_space = space;
 	}
 
-  async setFocus(focus: Focus) {
-    this.loading_space = true;
+	async setFocus(focus: Focus) {
+		this.loading_space = true;
 		this.focus = focus;
 		if (focus.type === 'space') {
 			await this.setSpaceById(focus.id);
@@ -180,10 +179,9 @@ export class AppContext {
 			if (resource) {
 				await this.setSpaceById(resource.space_id);
 			}
-    }
-    this.loading_space = false;
-  }
-
+		}
+		this.loading_space = false;
+	}
 
 	async clearFocus() {
 		this.current_space = undefined;
@@ -192,12 +190,12 @@ export class AppContext {
 	}
 
 	get space() {
-    return this.current_space;
+		return this.current_space;
 	}
 
 	get focused() {
 		if (!this.focus) return undefined;
-    return this.focus;
+		return this.focus;
 	}
 }
 

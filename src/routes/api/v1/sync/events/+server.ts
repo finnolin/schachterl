@@ -1,7 +1,7 @@
 // src/routes/api/v1/sync/events/+server.ts
 import { produce } from 'sveltekit-sse';
-import { pokeClients } from '$lib/server/poke';
-import log from '$lib/logger.svelte.js';
+import { pokeClients } from '#lib/server/poke/index.js';
+import log from '#lib/logger.svelte.js';
 
 export function POST({ locals }) {
 	if (!locals.session) return new Response('unauthorized', { status: 401 });

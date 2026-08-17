@@ -1,8 +1,8 @@
 import { db, schema } from '.';
 import { Changes, type Change } from '../repositories/changes';
 import { eq } from 'drizzle-orm';
-import * as IDs from '$lib/local/utils/ids';
-import { type BUILTIN_RESOURCE_TYPES } from '$lib/local/utils/ids';
+import * as IDs from '#lib/local/utils/ids.js';
+import { type BUILTIN_RESOURCE_TYPES } from '#lib/local/utils/ids.js';
 
 export async function seedSystemUser() {
 	await db

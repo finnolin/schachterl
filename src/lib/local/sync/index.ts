@@ -1,7 +1,7 @@
-import { Changes } from '$lib/local/repositories/Changes';
-import { app_context } from '$lib/local/app/app-context.svelte';
+import { Changes } from '#lib/local/repositories/Changes.js';
+import { app_context } from '#lib/local/app/app-context.svelte.js';
 import { apiPost } from './api';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 
 class SyncClient {
 	private batch_size = 500;

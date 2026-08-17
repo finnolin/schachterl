@@ -3,8 +3,8 @@ import type {
 	PushResponse,
 	PullResponse,
 	PullRequest
-} from '$lib/remote/changes.remote';
-import { store } from '$lib/local/app/store.svelte';
+} from '#lib/remote/changes.remote.js';
+import { store } from '#lib/local/app/store.svelte.js';
 import { app_context } from '../app/app-context.svelte';
 
 type Api = {

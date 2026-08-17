@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { sidebar } from './sidebar_state.svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '#lib/components/ui/button/button.svelte';
 	import SidebarIcon from '~icons/lucide/sidebar-open';
 
 	function checkOpen() {

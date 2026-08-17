@@ -1,23 +1,23 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '#lib/assets/favicon.svg';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { app_context } from '$lib/local/app/app-context.svelte';
-	import { store } from '$lib/local/app/store.svelte';
-	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
-	import PageHeader from '$lib/components/ui/page/page-header.svelte';
-	import UserIndicator from '$lib/components/elements/user-popover/user-indicator.svelte';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
+	import { store } from '#lib/local/app/store.svelte.js';
+	import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
+	import PageHeader from '#lib/components/ui/page/page-header.svelte';
+	import UserIndicator from '#lib/components/elements/user-popover/user-indicator.svelte';
 	//Components:
-	// import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	// import AppSidebar from '$lib/components/app-sidebar.svelte';
-	import AppSidebar from '$lib/components/layout/sidebar/app-sidebar.svelte';
+	// import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	// import AppSidebar from '#lib/components/app-sidebar.svelte';
+	import AppSidebar from '#lib/components/layout/sidebar/app-sidebar.svelte';
 	import { ModeWatcher } from 'mode-watcher';
-	import SidebarWrapper from '$lib/components/layout/sidebar/sidebar-wrapper.svelte';
-	import SidebarMain from '$lib/components/layout/sidebar/sidebar-main.svelte';
-	//import SidebarToggle from '$lib/components/layout/sidebar/sidebar-toggle.svelte';
-	import PageContent from '$lib/components/ui/page/page-content.svelte';
-	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import SidebarWrapper from '#lib/components/layout/sidebar/sidebar-wrapper.svelte';
+	import SidebarMain from '#lib/components/layout/sidebar/sidebar-main.svelte';
+	//import SidebarToggle from '#lib/components/layout/sidebar/sidebar-toggle.svelte';
+	import PageContent from '#lib/components/ui/page/page-content.svelte';
+	import Spinner from '#lib/components/ui/spinner/spinner.svelte';
 
 	let { children } = $props();
 	let is_ready = $state(false);

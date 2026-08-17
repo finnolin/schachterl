@@ -1,4 +1,4 @@
-import { store } from '$lib/local/app/store.svelte';
+import { store } from '#lib/local/app/store.svelte.js';
 
 class SidebarState {
 	is_collapsed = $state(false);

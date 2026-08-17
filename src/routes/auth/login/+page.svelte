@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { app_context } from '$lib/local/app/app-context.svelte';
-	import { store } from '$lib/local/app/store.svelte';
-	import { auth } from '$lib/local/auth/auth.svelte';
-	import { resolve } from '$app/paths'; //import { getAuthClient } from '$lib/local/auth';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
+	import { store } from '#lib/local/app/store.svelte.js';
+	import { auth } from '#lib/local/auth/auth.svelte.js';
+	import { resolve } from '$app/paths'; //import { getAuthClient } from '#lib/local/auth';
 	//const auth_client = getAuthClient();
 
 	let server_url: string = $state('');
@@ -92,9 +92,7 @@
 		<button
 			class="cursor-pointer"
 			onclick={() => {
-				goto(resolve('/auth/register'));
-			}}>
-			Register
-		</button>
+				goto(resolve('auth/register'));
+			}}>Register</button>
 	</div>
 {/if}

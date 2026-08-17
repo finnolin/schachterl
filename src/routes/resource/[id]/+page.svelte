@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 	let current_id: string | undefined;
 

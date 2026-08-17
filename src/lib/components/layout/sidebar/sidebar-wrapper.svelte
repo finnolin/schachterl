@@ -1,9 +1,9 @@
 <script lang="ts">
-	import * as Resizable from '$lib/components/ui/resizable/index.js';
+	import * as Resizable from '#lib/components/ui/resizable/index.js';
 	import SidebarHandle from './sidebar-handle.svelte';
 	import type { WithElementRef } from 'bits-ui';
 	import type { Snippet } from 'svelte';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	type Props = WithElementRef<
 		{
 			sidebar_content: Snippet;

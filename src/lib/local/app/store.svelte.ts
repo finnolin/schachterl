@@ -1,6 +1,6 @@
 import { load } from '@tauri-apps/plugin-store';
 import { isTauri } from '@tauri-apps/api/core';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 import { v7 as uuid } from 'uuid';
 
 class Store {

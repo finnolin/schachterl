@@ -2,17 +2,17 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import { tick } from 'svelte';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import type { Space } from '$lib/local/db/schema';
-	import { Spaces } from '$lib/local/repositories/Spaces';
+	import * as Command from '#lib/components/ui/command/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { cn, type WithElementRef } from '#lib/utils.js';
+	import type { Space } from '#lib/local/db/schema.js';
+	import { Spaces } from '#lib/local/repositories/Spaces.js';
 	import { type HTMLBaseAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { NOTE_TYPE_ID } from '$lib/local/utils/ids';
-	import { app_context as app } from '$lib/local/app/app-context.svelte';
+	import { NOTE_TYPE_ID } from '#lib/local/utils/ids.js';
+	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 
 	let { class: className, ...rest_props }: WithElementRef<HTMLBaseAttributes> = $props();
 
@@ -69,7 +69,7 @@
 									name,
 									default_resource_type: NOTE_TYPE_ID
 								});
-								await goto(resolve('/space/[id]', { id: new_space.id }));
+								await goto(resolve('/space/[space_id]', { space_id: new_space.id }));
 							}}>Create {value_input}</Button>
 					{/if}
 				</Command.Empty>
@@ -79,7 +79,7 @@
 							keywords={[space.name]}
 							value={space.id}
 							onSelect={async () => {
-								goto(resolve('/space/[id]', { id: space.id }));
+								goto(resolve('/space/[space_id]', { space_id: space.id }));
 								closeAndFocusTrigger();
 							}}>
 							<CheckIcon class={cn(selected_space?.id !== space.id && 'text-transparent')} />

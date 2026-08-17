@@ -1,13 +1,13 @@
 <script lang="ts">
-	import * as Popover from '$lib/components/ui/popover';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import { server_connection } from '$lib/local/sync/poke-client.svelte';
-	import { auth } from '$lib/local/auth/auth.svelte';
-	import { cn, type WithElementRef } from '$lib/utils';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import { store } from '$lib/local/app/store.svelte';
-	import { sync_client } from '$lib/local/sync';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import { server_connection } from '#lib/local/sync/poke-client.svelte.js';
+	import { auth } from '#lib/local/auth/auth.svelte.js';
+	import { cn, type WithElementRef } from '#lib/utils.js';
+	import Separator from '#lib/components/ui/separator/separator.svelte';
+	import { store } from '#lib/local/app/store.svelte.js';
+	import { sync_client } from '#lib/local/sync/index.js';
+	import Button from '#lib/components/ui/button/button.svelte';
 	import { type HTMLBaseAttributes } from 'svelte/elements';
 
 	let { class: class_name, ...rest_props }: WithElementRef<HTMLBaseAttributes> = $props();

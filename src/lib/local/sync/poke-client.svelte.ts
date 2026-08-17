@@ -1,9 +1,9 @@
 // src/lib/local/sync/poke-client.ts
 import { source } from 'sveltekit-sse';
-import { store } from '$lib/local/app/store.svelte';
+import { store } from '#lib/local/app/store.svelte.js';
 import { sync_client } from './index';
 import { isTauri } from '@tauri-apps/api/core';
-import log from '$lib/logger.svelte';
+import log from '#lib/logger.svelte.js';
 
 const HEARTBEAT_INTERVAL = 10_000;
 const STALE_AFTER = HEARTBEAT_INTERVAL * 3; // 30s of silence = dead

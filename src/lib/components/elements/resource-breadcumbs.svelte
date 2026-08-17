@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { cn, type WithElementRef } from '$lib/utils';
+	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { cn, type WithElementRef } from '#lib/utils.js';
 	import { type HTMLAttributes } from 'svelte/elements';
 
 	let { class: class_name, ...rest_props }: WithElementRef<HTMLAttributes<HTMLElement>> = $props();

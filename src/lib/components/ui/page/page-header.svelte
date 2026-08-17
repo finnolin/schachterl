@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { cn } from '$lib/utils.js';
-	import { sidebar } from '$lib/components/layout/sidebar/sidebar_state.svelte';
+	import { cn } from '#lib/utils.js';
+	import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
 	import Button from '../button/button.svelte';
 	import SidebarIcon from '~icons/tabler/arrow-bar-right';
 	import SettingsIcon from '~icons/lucide/settings';
-	import SpaceSelector from '$lib/components/elements/space-selector.svelte';
-	import ResourceBreadcumbs from '$lib/components/elements/resource-breadcumbs.svelte';
-	import { app_context as app } from '$lib/local/app/app-context.svelte';
+	import SpaceSelector from '#lib/components/elements/space-selector.svelte';
+	import ResourceBreadcumbs from '#lib/components/elements/resource-breadcumbs.svelte';
+	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
@@ -32,7 +32,7 @@
 		if (!app.focus) return;
 		const { type, id } = app.focus;
 		if (type === 'space') {
-			goto(resolve('/space/[id]/settings', { id }));
+			goto(resolve('/space/[space_id]/settings', { space_id: id }));
 		} else {
 			goto(resolve('/resource/[id]/settings', { id }));
 		}

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { app_context } from '$lib/local/app/app-context.svelte';
-	import ResourceCard from '$lib/components/layout/feed/resource-card.svelte';
-	import { useSpace } from '$lib/local/app/focus';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
+	import ResourceCard from '#lib/components/layout/feed/resource-card.svelte';
+	import { useSpace } from '#lib/local/app/focus.js';
 
 	const space = $derived(await useSpace()());
 </script>

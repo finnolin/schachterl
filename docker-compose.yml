@@ -4,11 +4,11 @@ services:
     container_name: schachterl-db
     restart: always
     ports:
-      - "${DB_PORT}:5432"
+      - '${DB_PORT}:5432'
     environment:
-      POSTGRES_USER: "${DB_USER}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: '${DB_NAME}'
     volumes:
       - ./pgdata:/var/lib/postgresql
       - ./pgdumps:/backups

@@ -1,11 +1,10 @@
-import { auth } from '$lib/server/auth';
+import { auth } from '#lib/server/auth/index.js';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { building } from '$app/environment';
-import { sequence } from '@sveltejs/kit/hooks';
-import type { Handle } from '@sveltejs/kit';
-import log from '$lib/logger.svelte';
-import { env } from '$env/dynamic/public';
-import { seedSystemUser, seedBuiltins } from '$lib/server/db/seed';
+import { building } from '$app/env';
+import { sequence, type Handle } from '@sveltejs/kit/hooks';
+import log from '#lib/logger.svelte.js';
+import { PUBLIC_DEV_TAURI_ORIGIN } from '$app/env/public';
+import { seedSystemUser, seedBuiltins } from '#lib/server/db/seed.js';
 //const is_tauri = process.env.TAURI_BUILD === 'true';
 
 await seedSystemUser();
@@ -13,8 +12,8 @@ await seedBuiltins();
 
 const TAURI_ORIGINS = ['http://tauri.localhost', 'https://tauri.localhost', 'tauri://localhost'];
 
-if (env.PUBLIC_DEV_TAURI_ORIGIN && env.PUBLIC_DEV_TAURI_ORIGIN != '') {
-	TAURI_ORIGINS.push(env.PUBLIC_DEV_TAURI_ORIGIN);
+if (PUBLIC_DEV_TAURI_ORIGIN && PUBLIC_DEV_TAURI_ORIGIN != '') {
+	TAURI_ORIGINS.push(PUBLIC_DEV_TAURI_ORIGIN);
 }
 
 const handleCors: Handle = async ({ event, resolve }) => {

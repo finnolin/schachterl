@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { app_context } from '$lib/local/app/app-context.svelte';
-	import { store } from '$lib/local/app/store.svelte';
-	import { auth } from '$lib/local/auth/auth.svelte';
-	//import { getAuthClient } from '$lib/local/auth';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
+	import { store } from '#lib/local/app/store.svelte.js';
+	import { auth } from '#lib/local/auth/auth.svelte.js';
+	//import { getAuthClient } from '#lib/local/auth';
 	//const auth_client = getAuthClient();
 
 	let server_url: string = $state('');

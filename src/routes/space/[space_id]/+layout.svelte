@@ -2,8 +2,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { setContext } from 'svelte';
-	import { Spaces } from '$lib/local/repositories/Spaces';
-	import { app_context } from '$lib/local/app/app-context.svelte';
+	import { Spaces } from '#lib/local/repositories/Spaces.js';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 	let { children } = $props();
 

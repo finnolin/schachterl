@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
-import { store } from '$lib/local/app/store.svelte';
-import { app_context } from '$lib/local/app/app-context.svelte';
-import { auth } from '$lib/local/auth/auth.svelte';
+import { store } from '#lib/local/app/store.svelte.js';
+import { app_context } from '#lib/local/app/app-context.svelte.js';
+import { auth } from '#lib/local/auth/auth.svelte.js';
 
 export const load = async () => {
 	// no server configured → nothing to authenticate against

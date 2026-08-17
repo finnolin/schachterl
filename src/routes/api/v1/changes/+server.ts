@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { Changes, type ChangeQueryOptions } from '$lib/server/repositories/changes';
+import { Changes, type ChangeQueryOptions } from '#lib/server/repositories/changes.js';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const options: ChangeQueryOptions = {

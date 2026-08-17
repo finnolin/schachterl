@@ -1,8 +1,8 @@
 import { db, schema, type ServerTx } from '../db';
-import { coerce } from '$lib/utils';
+import { coerce } from '#lib/utils.js';
 import { createSelectSchema } from 'drizzle-orm/zod';
-import * as local_schema from '$lib/local/db/schema';
-import { type EnumSycnedTables } from '$lib/local/db/schema';
+import * as local_schema from '#lib/local/db/schema.js';
+import { type EnumSycnedTables } from '#lib/local/db/schema.js';
 import { type PgTable, type PgColumn } from 'drizzle-orm/pg-core';
 import { eq, and, gt, or, asc, inArray } from 'drizzle-orm';
 import z from 'zod';

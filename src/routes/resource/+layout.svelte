@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { app_context as app } from '$lib/local/app/app-context.svelte';
+	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	let { children } = $props();
 
 	let last: string | undefined;

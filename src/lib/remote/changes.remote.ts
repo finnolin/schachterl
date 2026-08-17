@@ -1,12 +1,12 @@
 import { command, query } from '$app/server';
-import { db, schema } from '$lib/server/db';
+import { db, schema } from '#lib/server/db/index.js';
 import { error } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { Changes, type ChangeResult, change_in_schema } from '$lib/server/repositories/changes';
-import { pokeClients } from '$lib/server/poke';
-import log from '$lib/logger.svelte';
+import { Changes, type ChangeResult, change_in_schema } from '#lib/server/repositories/changes.js';
+import { pokeClients } from '#lib/server/poke/index.js';
+import log from '#lib/logger.svelte.js';
 
 //const change_schema = createSelectSchema(local_schema.change);
 const batch_schema = z.array(change_in_schema);
