@@ -15,6 +15,7 @@ import {
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import type { ResourceFieldConfig } from '#lib/local/db/schema.js';
+import { local_db } from '#lib/local/db/index.js';
 
 // * Auth tables:
 export const user_role_enum = pgEnum('user_roles', ['user', 'admin']);
@@ -31,6 +32,7 @@ export const user = pgTable('user', {
 		.$defaultFn(() => new Date())
 		.$onUpdateFn(() => new Date()),
 	last_login: timestamp('last_login', { withTimezone: true })
+	//database_id: uuid('database_id')
 });
 export type User = typeof user.$inferSelect;
 
@@ -53,6 +55,7 @@ export type Session = typeof session.$inferSelect;
 export const account = pgTable('account', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	user_id: uuid('user_id').references(() => user.id, { onDelete: 'cascade' }),
+	issuer: text('issuer'),
 	account_id: text('account_id').notNull(),
 	provider_id: text('provider_id').notNull(),
 	access_token: text('access_token'),

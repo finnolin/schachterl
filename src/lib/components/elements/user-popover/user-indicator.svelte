@@ -48,7 +48,7 @@
 		</div>
 		<div class="text-xs">
 			{#if auth.user}
-				{auth.user.id}
+				{auth.user.email}
 			{/if}
 		</div>
 		{#if auth.session}
@@ -58,14 +58,23 @@
 				}}>Logout</Button>
 		{/if}
 		<Separator />
-		<div class="flex flex-row items-center justify-between">
-			<div class="text-sm">
-				{store.server_url}
+
+		{#if server_connection.connected}
+			<div class="text-xs">Server: connected</div>
+			<div class="flex flex-row items-center justify-between">
+				<div class="text-sm">
+					{store.server_url}
+				</div>
+				<div class="flex flex-row items-center justify-end gap-1">
+					{#if auth.session}
+						<Button variant="outline" size="sm" class="h-5" onclick={push}>Push</Button>
+						<Button variant="outline" size="sm" class="h-5" onclick={pull}>Pull</Button>
+					{/if}
+				</div>
 			</div>
-			<div class="flex flex-row items-center justify-end gap-1">
-				<Button variant="outline" size="sm" onclick={push}>Push</Button>
-				<Button variant="outline" size="sm" onclick={pull}>Pull</Button>
-			</div>
-		</div>
+		{:else}
+			<div class="text-xs">Server: not connected</div>
+			<Button href="/settings/server" variant="outline">Server Settings</Button>
+		{/if}
 	</Popover.Content>
 </Popover.Root>

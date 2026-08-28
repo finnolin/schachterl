@@ -41,6 +41,11 @@ export const auth = betterAuth({
 				input: false,
 				defaultValue: 'user'
 			}
+			// database_id: {
+			// 	type: 'string',
+			// 	required: true,
+			// 	input: true
+			// }
 		}
 	},
 	session: {

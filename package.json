@@ -65,9 +65,10 @@
 		"vite": "^8.1.4"
 	},
 	"dependencies": {
+		"@tauri-apps/plugin-process": "^2.3.1",
 		"@tauri-apps/plugin-sql": "^2.3.1",
 		"@tauri-apps/plugin-store": "^2.4.2",
-		"better-auth": "^1.7.0-rc.4",
+		"better-auth": "^1.7.1",
 		"bits-ui": "^2.18.1",
 		"drizzle-orm": "^1.0.0-rc.4",
 		"fractional-indexing": "^4.0.0",
@@ -86,7 +87,14 @@
 	"overrides": {
 		"better-auth": {
 			"drizzle-kit": "1.0.0-rc.4",
-			"drizzle-orm": "$drizzle-orm"
+			"drizzle-orm": "$drizzle-orm",
+			"@sveltejs/kit": "next"
+		},
+		"sveltekit-sse": {
+			"@sveltejs/kit": "next"
+		},
+		"runed": {
+			"@sveltejs/kit": "next"
 		}
 	},
 	"imports": {

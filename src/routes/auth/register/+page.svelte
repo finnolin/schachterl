@@ -81,9 +81,9 @@
 
 {#if !app_context.is_tauri || (app_context.is_tauri && store.server_url)}
 	<div class="flex flex-col gap-1">
-		<input class="border border-amber-600" bind:value={form_data.email} />
-		<input class="border border-amber-600" bind:value={form_data.name} />
-		<input class="border border-amber-600" bind:value={form_data.password} />
+		email <input class="border border-amber-600" bind:value={form_data.email} />
+		name <input class="border border-amber-600" bind:value={form_data.name} />
+		password <input class="border border-amber-600" bind:value={form_data.password} />
 		<button
 			class="cursor-pointer"
 			onclick={() => {

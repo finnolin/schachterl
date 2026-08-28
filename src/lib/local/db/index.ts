@@ -8,6 +8,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { store } from '../app/store.svelte';
 import { relations } from './relations';
 import { app_context } from '../app/app-context.svelte';
+import { BUILTIN_RESOURCE_TYPES } from '#lib/local/utils/ids.js';
 
 import { SQLocal } from 'sqlocal';
 import log from '#lib/logger.svelte.js';
@@ -103,6 +104,14 @@ export class DatabaseService {
 				await this.applyMigrations();
 			}
 
+			// for local check if seeds are there
+			if (isTauri() && !store.server_url) {
+				this.checkSeeds();
+
+				// check if the user exists locally
+				
+			}
+
 			// Set in_flight of all changes to false
 			await this.drizzle_db.update(schema.change).set({ in_flight: false });
 			app_context.setDb(this.drizzle_db);
@@ -188,6 +197,21 @@ export class DatabaseService {
 		} catch (error) {
 			log.migrator.error(error);
 			return false;
+		}
+	}
+
+	private async checkSeeds() {
+		if (!this.drizzle_db) return;
+		const db = this.drizzle_db;
+		log.migrator.debug('Checking seeds...');
+		for (const resource_type of BUILTIN_RESOURCE_TYPES) {
+			const [existing] = await db
+				.select({ id: schema.resource_type.id })
+				.from(schema.resource_type)
+				.where(eq(schema.resource_type.id, resource_type.id))
+				.limit(1);
+			if (existing) continue;
+			
 		}
 	}
 

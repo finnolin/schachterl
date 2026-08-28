@@ -8,7 +8,7 @@ export class Users {
 
 	async add() {
 		// create user in local db
-		const [user] = await this.db.insert(this.schema.user).values({ name: 'test' }).returning();
+		const [user] = await this.db.insert(this.schema.user).values({ name: 'local' }).returning();
 		console.log(user);
 		// create change in local db
 		const change_out = await this.db

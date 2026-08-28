@@ -10,6 +10,7 @@ import log from '#lib/logger.svelte.js';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { server_connection } from '../sync/poke-client.svelte';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 //type ClientSession = NonNullable<Awaited<ReturnType<AuthClient['getSession']>>['data']>;
 function makeClient(base_url: string, validateSession: () => Promise<void>) {
@@ -117,6 +118,9 @@ class Auth {
 		}
 
 		if (db.user_id !== authed_id) {
+			if (isTauri()) {
+				//await relaunch();
+			}
 			await db.initialize(); // initialize() gets the user_id from store
 		}
 		log.auth.debug('User + db OK');

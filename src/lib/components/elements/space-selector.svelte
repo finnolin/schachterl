@@ -65,6 +65,7 @@
 								open = false;
 								value_input = '';
 								await tick(); // Command fully unmounted now
+								console.log(NOTE_TYPE_ID);
 								const new_space = await new Spaces().createSpace({
 									name,
 									default_resource_type: NOTE_TYPE_ID
