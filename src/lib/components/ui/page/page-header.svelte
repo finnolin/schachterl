@@ -32,9 +32,9 @@
 		if (!app.focus) return;
 		const { type, id } = app.focus;
 		if (type === 'space') {
-			goto(resolve('/space/[space_id]/settings', { space_id: id }));
+			goto(resolve('/app/space/[space_id]/settings', { space_id: id }));
 		} else {
-			goto(resolve('/resource/[id]/settings', { id }));
+			goto(resolve('/app/resource/[id]/settings', { id }));
 		}
 	}
 </script>

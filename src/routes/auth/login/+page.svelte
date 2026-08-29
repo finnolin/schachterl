@@ -3,14 +3,13 @@
 	import { app_context } from '#lib/local/app/app-context.svelte.js';
 	import { store } from '#lib/local/app/store.svelte.js';
 	import { auth } from '#lib/local/auth/auth.svelte.js';
-	import { resolve } from '$app/paths'; //import { getAuthClient } from '#lib/local/auth';
+	import { resolve } from '$app/paths';
+	import Input from '#lib/components/ui/input/input.svelte';
+	import Button from '#lib/components/ui/button/button.svelte';
+	import Label from '#lib/components/ui/label/label.svelte';
+	//import { getAuthClient } from '#lib/local/auth';
 	//const auth_client = getAuthClient();
-
-	let server_url: string = $state('');
-	if (store.server_url) {
-		server_url = store.server_url;
-	}
-
+	console.log('login');
 	let form_data = $state({
 		email: '',
 		password: ''
@@ -47,52 +46,32 @@
 	}
 </script>
 
-{#if app_context.is_tauri}
-	{#if store.server_url}
-		<div class="flex flex-col gap-2">
-			Server Set: {store.server_url}
-			<button
-				class="cursor-pointer"
-				onclick={() => {
-					store.clearProperty('server_url');
-				}}>
-				Clear
-			</button>
+{#if !app_context.is_tauri || (app_context.is_tauri && store.sync_connection)}
+	<div class="flex w-full max-w-sm flex-col gap-4">
+		<div class="flex flex-col gap-1.5">
+			<Label for="email">Email</Label>
+			<Input id="email" type="email" placeholder="Enter your email" bind:value={form_data.email} />
 		</div>
-	{:else}
-		<div class="flex flex-col gap-2">
-			<input
-				type="text"
-				id="server_address"
-				name="server_address"
-				placeholder="Enter you server address here"
-				bind:value={server_url} />
-			<button
-				class="cursor-pointer"
-				onclick={() => {
-					app_context.setServer(server_url);
-				}}>
-				Set
-			</button>
+		<div class="flex flex-col gap-1.5">
+			<Label for="password">Password</Label>
+			<Input
+				id="password"
+				type="password"
+				placeholder="Enter your password"
+				bind:value={form_data.password} />
 		</div>
-	{/if}
-{/if}
-
-{#if !app_context.is_tauri || (app_context.is_tauri && store.server_url)}
-	<div class="flex flex-col gap-1">
-		<input class="border border-amber-600" bind:value={form_data.email} />
-		<input class="border border-amber-600" bind:value={form_data.password} />
-		<button
-			class="cursor-pointer"
-			onclick={() => {
-				login();
-			}}>
-			Login
-		</button>
-		<button
-			class="cursor-pointer"
-			onclick={() => {
-				goto(resolve('auth/register'));
-			}}>Register</button>
+		<div class="flex flex-col gap-2">
+			<Button
+				onclick={() => {
+					login();
+				}}>
+				Login
+			</Button>
+			<Button
+				variant="outline"
+				onclick={() => {
+					goto(resolve('auth/register'));
+				}}>Register</Button>
+		</div>
 	</div>
 {/if}

@@ -9,11 +9,13 @@
 	import { sync_client } from '#lib/local/sync/index.js';
 	import Button from '#lib/components/ui/button/button.svelte';
 	import { type HTMLBaseAttributes } from 'svelte/elements';
+	import { local_db } from '#lib/local/db/index.js';
 
 	let { class: class_name, ...rest_props }: WithElementRef<HTMLBaseAttributes> = $props();
 
 	//Icons:
 	import UserIcon from '~icons/tabler/user-circle';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 	async function push() {
 		await sync_client.push();
@@ -51,6 +53,16 @@
 				{auth.user.email}
 			{/if}
 		</div>
+		<div class="text-xs">
+			{#if auth.user}
+				{auth.user.id}
+			{/if}
+		</div>
+		<div class="text-xs">
+			{#if local_db.db_string}
+				{local_db.db_string}
+			{/if}
+		</div>
 		{#if auth.session}
 			<Button
 				onclick={() => {
@@ -63,7 +75,7 @@
 			<div class="text-xs">Server: connected</div>
 			<div class="flex flex-row items-center justify-between">
 				<div class="text-sm">
-					{store.server_url}
+					{store.sync_connection_target}
 				</div>
 				<div class="flex flex-row items-center justify-end gap-1">
 					{#if auth.session}

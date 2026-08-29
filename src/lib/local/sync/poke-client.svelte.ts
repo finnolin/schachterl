@@ -32,8 +32,13 @@ export class ServerConnection {
 	async connect() {
 		this.should_connect = true;
 		if (this.#connection) return;
-		if (!store.server_url) return;
-
+		if (
+			!store.sync_connection ||
+			store.sync_connection.mode == 'local' ||
+			!store.sync_connection.endpoint
+		)
+			return;
+		log.sync.info('Connect to server...');
 		const headers: Record<string, string> = {};
 		if (this.is_tauri) {
 			const token = await store.getProperty('bearer_token');
@@ -43,7 +48,7 @@ export class ServerConnection {
 		this.#last_seen = Date.now();
 		this.#reconnecting = false;
 
-		this.#connection = source(`${store.server_url}/api/v1/sync/events`, {
+		this.#connection = source(`${store.sync_connection.endpoint}/api/v1/sync/events`, {
 			headers,
 			onclose: async ({ connect }) => {
 				this.connected = false;

@@ -70,7 +70,7 @@
 									name,
 									default_resource_type: NOTE_TYPE_ID
 								});
-								await goto(resolve('/space/[space_id]', { space_id: new_space.id }));
+								await goto(resolve('/app/space/[space_id]', { space_id: new_space.id }));
 							}}>Create {value_input}</Button>
 					{/if}
 				</Command.Empty>
@@ -80,7 +80,7 @@
 							keywords={[space.name]}
 							value={space.id}
 							onSelect={async () => {
-								goto(resolve('/space/[space_id]', { space_id: space.id }));
+								goto(resolve('/app/space/[space_id]', { space_id: space.id }));
 								closeAndFocusTrigger();
 							}}>
 							<CheckIcon class={cn(selected_space?.id !== space.id && 'text-transparent')} />

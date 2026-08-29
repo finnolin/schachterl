@@ -25,7 +25,7 @@ export async function apiPost<P extends keyof Api>(
 	path: P,
 	body: Api[P]['req']
 ): Promise<Api[P]['res']> {
-	const res = await fetch(`${store.server_url}${path}`, {
+	const res = await fetch(`${store.sync_connection_target}${path}`, {
 		method: 'POST',
 		credentials: 'include',
 		headers: await authHeaders(),

@@ -2,6 +2,9 @@ import { load } from '@tauri-apps/plugin-store';
 import { isTauri } from '@tauri-apps/api/core';
 import log from '#lib/logger.svelte.js';
 import { v7 as uuid } from 'uuid';
+import { PUBLIC_BASE_URL } from '$app/env/public';
+
+type SyncConnection = undefined | { mode: 'local' } | { mode: 'remote'; endpoint: string };
 
 class Store {
 	private is_tauri: boolean = false;
@@ -11,9 +14,12 @@ class Store {
 	client_id: string | undefined = $state();
 	server_url: string | undefined = $state();
 	auth_token: string | undefined = $state();
-	user_id: string | undefined = $state();
+	local_user_id: string | undefined = $state();
+	remote_user_id: string | undefined = $state();
+	//user_id: string | undefined = $state();
 	bearer_token: string | undefined = $state();
 	sidebar_size: number | undefined = $state();
+	sync_connection_target: string | undefined = $state();
 
 	constructor() {
 		this.is_tauri = isTauri();
@@ -25,13 +31,20 @@ class Store {
 		if (isTauri()) {
 			log.store.debug('Loading tauri store...');
 			this.store = await load('properties.json', { defaults: {}, autoSave: 100 });
+		} else {
+			log.store.debug('Webapp: Overwriting sync_connection_target + server_url...');
+			await this.setProperty('sync_connection_target', PUBLIC_BASE_URL!);
+			await this.setProperty('server_url', PUBLIC_BASE_URL!);
 		}
-		this.getProperty('server_url');
-		this.getProperty('user_id');
-		this.getProperty('client_id');
+
+		await this.getProperty('server_url');
+		await this.getProperty('local_user_id');
+		await this.getProperty('remote_user_id');
 		// this.getProperty('auth_token');
 		// this.getProperty('bearer_token');
-		this.getProperty('sidebar_size');
+		await this.getProperty('sidebar_size');
+		await this.getProperty('sync_connection_target');
+		await this.ensureClientId();
 	}
 
 	async getProperty<K extends keyof Store>(key: K): Promise<Store[K] | undefined> {
@@ -78,11 +91,55 @@ class Store {
 		log.store.debug(key, 'deleted.');
 	}
 
-	async getOrCreateLocalUserId(): Promise<string> {
-		let id = await this.getProperty('user_id');
+	get sync_connection(): SyncConnection {
+		const target = this.sync_connection_target;
+
+		if (target === 'local') {
+			return { mode: 'local' };
+		}
+
+		if (target && /^https?:\/\//.test(target)) {
+			return { mode: 'remote', endpoint: target };
+		}
+
+		// Backward compatibility while server_url is still in use.
+		if (this.server_url && /^https?:\/\//.test(this.server_url)) {
+			return { mode: 'remote', endpoint: this.server_url };
+		}
+
+		return undefined;
+	}
+
+	get user_id(): string | undefined {
+		const target = this.sync_connection_target;
+
+		if (target === 'local' && this.local_user_id) {
+			console.log('target local', 'user_id', this.local_user_id);
+			return this.local_user_id;
+		}
+		if (target && /^https?:\/\//.test(target) && this.remote_user_id) {
+			console.log('target remnote', 'user_id', this.remote_user_id);
+			return this.remote_user_id;
+		}
+		console.log('target undefined');
+		return undefined;
+	}
+
+	async ensureClientId(): Promise<string> {
+		let id = await this.getProperty('client_id');
+		if (!id) {
+			log.store.info('Creating new client_id...');
+			id = uuid();
+			await this.setProperty('client_id', id);
+		}
+		return id;
+	}
+
+	async ensureLocalUserId(): Promise<string> {
+		let id = await this.getProperty('local_user_id');
 		if (!id) {
 			id = uuid();
-			await this.setProperty('user_id', id);
+			await this.setProperty('local_user_id', id);
 		}
 		return id;
 	}

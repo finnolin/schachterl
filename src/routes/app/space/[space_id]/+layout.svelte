@@ -1,4 +1,3 @@
-<!-- /space/[id]/+layout.svelte -->
 <script lang="ts">
 	import { page } from '$app/state';
 	import { setContext } from 'svelte';

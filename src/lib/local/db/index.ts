@@ -12,9 +12,8 @@ import { BUILTIN_RESOURCE_TYPES } from '#lib/local/utils/ids.js';
 
 import { SQLocal } from 'sqlocal';
 import log from '#lib/logger.svelte.js';
-
-const db_name_default = 'local';
-const db_name_string = 'sqlite:' + db_name_default + '.db';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
 
 // ---------------------------------------------------------------------------
 // Migration discovery (drizzle-kit v3 layout, no journal.json)
@@ -62,7 +61,7 @@ function getSQLocalDb(db_name_string: string) {
 
 export class DatabaseService {
 	user_id: string | undefined;
-	private db_string: string | undefined;
+	db_string: string | undefined;
 	private db_connection: Database | SQLocal | undefined;
 	private drizzle_schema = schema;
 	private drizzle_db: SqliteRemoteDatabase<typeof relations> | null = null;
@@ -70,17 +69,21 @@ export class DatabaseService {
 	private migration_entries: MigrationEntry[] = getMigrationEntries();
 
 	async initialize() {
+		const user_id = store.user_id;
+		if (!user_id) {
+			log.db.error('User ID missing! Cant open DB!');
+			return;
+		}
+
 		if (this.db_connection && store.user_id != this.user_id) {
-			log.db.info('DB already exists. Closing...');
+			log.db.info('A DB for a different User is already open. Closing...');
 			await this.destroy();
 		}
-		if (store.user_id) {
-			this.user_id = store.user_id;
-			this.db_string = 'sqlite:' + this.user_id + '.db';
-		} else {
-			this.db_string = 'sqlite:' + 'local_only' + '.db';
-		}
+		this.user_id = user_id;
+
+		this.db_string = 'sqlite:' + user_id + '.db';
 		const db_string = this.db_string;
+		log.db.info('Opening Database: ', db_string);
 		if (isTauri()) {
 			this.db_connection = await getTauriDb(db_string);
 			this.drizzle_db = createProxyTauri(db_string);
@@ -109,12 +112,12 @@ export class DatabaseService {
 				this.checkSeeds();
 
 				// check if the user exists locally
-				
 			}
 
 			// Set in_flight of all changes to false
 			await this.drizzle_db.update(schema.change).set({ in_flight: false });
 			app_context.setDb(this.drizzle_db);
+			goto(resolve('/app'));
 			return this.drizzle_db;
 		} catch (error) {
 			console.error('Database initialization error:', error);
@@ -211,7 +214,6 @@ export class DatabaseService {
 				.where(eq(schema.resource_type.id, resource_type.id))
 				.limit(1);
 			if (existing) continue;
-			
 		}
 	}
 

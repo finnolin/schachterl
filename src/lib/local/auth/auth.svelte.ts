@@ -74,9 +74,8 @@ class Auth {
 		await this.validateSession();
 	}
 
-	private createClient(server_url?: string) {
+	createClient(server_url?: string) {
 		const base_url = server_url || PUBLIC_BASE_URL!;
-
 		log.auth.debug('Create auth client for server: ', base_url);
 		this.client = makeClient(base_url, () => this.validateSession());
 	}
@@ -100,27 +99,28 @@ class Auth {
 	private async validateUser() {
 		if (!this.session) {
 			// no session: stored id or not, go to login
-			log.auth.info(store.user_id ? 'No session but user ID found' : 'No user ID found');
+			const cached_user = store.remote_user_id;
+			log.auth.info(cached_user ? 'No session but user ID found' : 'No user ID found');
 			goto(resolve('auth/login'));
 			return;
 		}
 
 		const authed_id = this.session.user.id;
 		this.user = this.session.user;
-		const stored_id = await store.getProperty('user_id');
+		const stored_id = await store.getProperty('remote_user_id');
 		await store.setProperty('client_id', this.session.session.client_id);
 
 		if (stored_id && stored_id !== authed_id) {
 			log.auth.warn('User id mismatch', { stored: stored_id, authed: authed_id });
 		}
 		if (stored_id !== authed_id) {
-			await store.setProperty('user_id', authed_id);
+			await store.setProperty('remote_user_id', authed_id);
 		}
 
 		if (db.user_id !== authed_id) {
-			if (isTauri()) {
-				//await relaunch();
-			}
+			// if (isTauri()) {
+			// 	//await relaunch();
+			// }
 			await db.initialize(); // initialize() gets the user_id from store
 		}
 		log.auth.debug('User + db OK');

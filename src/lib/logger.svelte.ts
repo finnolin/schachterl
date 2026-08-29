@@ -217,7 +217,7 @@ log.hooks.setLevel('info');
 log.auth = log.scope('auth', '#ff9900');
 log.auth.setLevel('debug');
 log.store = log.scope('store', '#db72bf');
-log.store.setLevel('info');
+log.store.setLevel('debug');
 log.api = log.scope('api', '#cf2d5b');
 log.api.setLevel('info');
 log.sync = log.scope('sync', '#fcba03');

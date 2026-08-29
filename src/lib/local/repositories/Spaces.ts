@@ -10,7 +10,7 @@ export class Spaces {
 	async createSpace(space: SpaceInsert) {
 		const db = app.db;
 		const schema = app.schema;
-		const user_id = await store.getOrCreateLocalUserId();
+		const user_id = await store.ensureLocalUserId();
 
 		const [row] = await db.insert(schema.space).values(space).returning();
 

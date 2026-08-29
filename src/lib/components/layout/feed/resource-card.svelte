@@ -29,7 +29,7 @@
 	}
 
 	function openResource(id: string) {
-		goto(resolve('/resource/[id]', { id }));
+		goto(resolve('/app/resource/[id]', { id }));
 	}
 
 	const models = [

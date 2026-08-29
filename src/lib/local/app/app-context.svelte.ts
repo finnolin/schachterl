@@ -1,6 +1,5 @@
 import { local_db, DatabaseService } from '#lib/local/db/index.js';
 import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
-import { v7 as uuid } from 'uuid';
 import log from '#lib/logger.svelte.js';
 import { eq } from 'drizzle-orm';
 import { isTauri } from '@tauri-apps/api/core';
@@ -8,13 +7,15 @@ import * as schema from '#lib/local/db/schema.js';
 import { relations } from '#lib/local/db/relations.js';
 import { store } from '#lib/local/app/store.svelte.js';
 import { auth } from '#lib/local/auth/auth.svelte.js';
-import { PUBLIC_BASE_URL } from '$app/env/public';
 import { tree } from '../utils/tree.svelte';
 import { Spaces } from '../repositories/Spaces';
 import { Resources } from '../repositories/Resources';
 import { LiveQuery } from '../utils/live-query.svelte';
 import type { Space, RelationshipType, ResourceType } from '#lib/local/db/schema.js';
 import { notify } from '../utils/invalidation';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
+import { page } from '$app/state';
 import { SvelteMap } from 'svelte/reactivity';
 
 type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
@@ -43,34 +44,56 @@ export class AppContext {
 
 	is_tauri: boolean = $state(isTauri());
 
+	// * Boot progress, surfaced by the root layout / welcome page as a progress bar.
+	boot_total_steps = 4;
+	boot_step: number = $state(0);
+	boot_label: string = $state('Starting...');
+
+	private setBootStep(step: number, label: string) {
+		this.boot_step = step;
+		this.boot_label = label;
+		log.app.debug(`Boot step ${step}/${this.boot_total_steps}: ${label}`);
+	}
+
 	async initialize() {
 		log.app.debug('Initializing app context...');
+		this.setBootStep(0, 'Loading settings...');
+		await store.initialize();
 
-		// * 1. Client ID
-		log.app.debug('Checking client ID...');
-		await store.getProperty('client_id');
-		if (!store.client_id) {
-			log.app.info('Creating new client_id...');
-			const client_id = uuid();
-			await store.setProperty('client_id', client_id);
-		}
-		await store.getOrCreateLocalUserId();
+		this.setBootStep(1, 'Checking connection...');
+		const sync_connection = store.sync_connection;
+		if (!sync_connection) {
+			goto(resolve('settings/server'));
+			return;
+		} else if (sync_connection.mode == 'local') {
+			this.setBootStep(2, 'Setting up local user...');
+			await store.ensureLocalUserId();
 
-		// * 2. Set Server URL for web app
-		if (!this.is_tauri) {
-			log.app.debug('Webapp: Overwriting server_url...');
-			await store.setProperty('server_url', PUBLIC_BASE_URL!);
-		}
-
-		// * 3. If no Server URL exits we can skip auth entirely and immediately initialize the local db
-		if (store.server_url) {
-			log.app.debug('Server URL set.');
-			await this.connectServer();
-		} else {
-			log.app.debug('No Server URL set. Initialize Local DB with offline user...');
+			this.setBootStep(3, 'Opening database...');
 			await this.Database.initialize();
+		} else if (sync_connection.mode == 'remote') {
+			this.setBootStep(2, 'Connecting to server...');
+			auth.createClient(sync_connection.endpoint);
+			const cached_user = await store.getProperty('remote_user_id');
+			console.log(cached_user);
+			if (!cached_user) {
+				console.log('navigating to auth');
+				goto(resolve('auth/login'));
+				return;
+			}
+
+			this.setBootStep(3, 'Opening database...');
+			await this.Database.initialize();
+			void auth.validateSession();
 		}
+
+		this.setBootStep(4, 'Ready.');
 		this.initQueries();
+
+		// e.g. returning from the server-selection page after choosing 'local'
+		if (page.url.pathname === resolve('settings/server')) {
+			goto(resolve('/'));
+		}
 	}
 
 	private initQueries() {
@@ -80,12 +103,12 @@ export class AppContext {
 	}
 
 	async setServer(server_url: string) {
-		await store.setProperty('server_url', server_url);
-		await this.connectServer();
+		await store.setProperty('sync_connection_target', server_url);
+		await this.initialize();
 	}
 
 	async connectServer() {
-		if (!store.server_url) return;
+		if (!store.sync_connection || store.sync_connection.mode == 'local') return;
 		if (store.user_id) {
 			log.app.debug('Local User ID found... initializing DB...');
 			await this.Database.initialize();
@@ -97,6 +120,7 @@ export class AppContext {
 
 	async clearServer() {
 		if (!isTauri()) return;
+		await store.clearProperty('sync_connection_target');
 		await store.clearProperty('server_url');
 	}
 
