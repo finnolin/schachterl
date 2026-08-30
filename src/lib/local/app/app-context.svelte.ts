@@ -16,6 +16,7 @@ import { notify } from '../utils/invalidation';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';
+import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
 import { SvelteMap } from 'svelte/reactivity';
 
 type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
@@ -86,6 +87,7 @@ export class AppContext {
 			await this.Database.initialize();
 			void auth.validateSession();
 		}
+		//await sidebar.initialize();
 
 		this.setBootStep(4, 'Ready.');
 		this.initQueries();

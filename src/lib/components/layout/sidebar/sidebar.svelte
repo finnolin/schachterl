@@ -4,13 +4,15 @@
 	import { sidebar } from './sidebar_state.svelte';
 	import { cn } from '#lib/utils.js';
 	import { onMount } from 'svelte';
+	import { store } from '#lib/local/app/store.svelte.js';
 
 	let { children } = $props();
 
 	let containerWidth = $state(0);
-	let is_collapsed = $state(false);
+	//let is_collapsed = $derived(sidebar.sidebar_collapsed);
+	let is_collapsed = $derived(sidebar.sidebar_collapsed);
 	let isAnimating = $state(false);
-	let default_size = $state(sidebar.size || 20);
+	let default_size = $derived(sidebar.size);
 
 	const MIN_PX = 150;
 	const MAX_PX = 500;
@@ -22,18 +24,25 @@
 	let pane: ReturnType<typeof Pane>;
 
 	onMount(async () => {
+		console.log('before sidebar init');
 		await sidebar.initialize();
-		if (pane && sidebar.size > 0) {
-			default_size = sidebar.size;
-			pane.resize(sidebar.size);
-		}
+		console.log('after sidebar init');
+		//console.log(sidebar.);
+
+		// if (pane && sidebar.size > 0) {
+		// 	default_size = sidebar.size;
+		// 	pane.resize(sidebar.size);
+		// }
 	});
 
 	function toggleCollapse() {
 		isAnimating = true;
 		if (is_collapsed) {
+			//sidebar.sidebar_collapsed = false;
+
 			pane.expand();
 		} else {
+			//sidebar.sidebar_collapsed = true;
 			pane.collapse();
 		}
 		setTimeout(() => {
@@ -54,12 +63,16 @@
 	collapsible={true}
 	collapsedSize={collapsed_size}
 	onCollapse={() => {
-		is_collapsed = true;
-		sidebar.is_collapsed = true;
+		//is_collapsed = true;
+		console.log('collapse!');
+		store.setProperty('sidebar_collapsed', 'true');
+		sidebar.sidebar_collapsed = true;
 	}}
 	onExpand={() => {
-		is_collapsed = false;
-		sidebar.is_collapsed = false;
+		console.log('expand!');
+		//is_collapsed = false;
+		store.setProperty('sidebar_collapsed', 'false');
+		sidebar.sidebar_collapsed = false;
 	}}
 	onResize={(size) => {
 		sidebar.setSidebarSize(size);
@@ -71,5 +84,7 @@
 	<!-- <button onclick={toggleCollapse}>
 		{is_collapsed ? 'Expand' : 'Collapse'}
 	</button> -->
+	{default_size}
+	{is_collapsed}
 	{@render children()}
 </Resizable.Pane>

@@ -22,7 +22,7 @@
 
 	function checkOpen() {
 		//console.log(sidebar.isMobile);
-		if (sidebar.is_collapsed) {
+		if (sidebar.sidebar_collapsed) {
 			return false;
 		}
 		return true;

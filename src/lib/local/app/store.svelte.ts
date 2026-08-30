@@ -19,6 +19,7 @@ class Store {
 	//user_id: string | undefined = $state();
 	bearer_token: string | undefined = $state();
 	sidebar_size: number | undefined = $state();
+	sidebar_collapsed: string | undefined = $state();
 	sync_connection_target: string | undefined = $state();
 
 	constructor() {
@@ -43,6 +44,7 @@ class Store {
 		// this.getProperty('auth_token');
 		// this.getProperty('bearer_token');
 		await this.getProperty('sidebar_size');
+		await this.getProperty('sidebar_collapsed');
 		await this.getProperty('sync_connection_target');
 		await this.ensureClientId();
 	}
@@ -61,7 +63,7 @@ class Store {
 
 		if (value !== undefined && value !== null) {
 			(this[key] as Store[K]) = value;
-			log.store.debug(key, ':', value);
+			log.store.debug('get: ', key, ':', value);
 		} else {
 			log.store.debug('Property', key, 'not found...');
 		}
@@ -77,7 +79,7 @@ class Store {
 			localStorage.setItem(key, String(value));
 		}
 		(this[key] as Store[K]) = value;
-		log.store.debug(key, ':', value);
+		log.store.debug('set: ', key, ':', value);
 	}
 
 	async clearProperty<K extends keyof Store>(key: K) {

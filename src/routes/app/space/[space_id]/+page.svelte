@@ -1,12 +1,17 @@
 <script lang="ts">
-	import { app_context } from '#lib/local/app/app-context.svelte.js';
 	import ResourceCard from '#lib/components/layout/feed/resource-card.svelte';
+	import SettingsIcon from '~icons/lucide/settings';
+	import Button from '#lib/components/ui/button/button.svelte';
+
 	import { useSpace } from '#lib/local/app/focus.js';
 
 	const space = $derived(await useSpace()());
 </script>
 
-{space?.name}
+<div class="flex flex-row gap-2">
+	{space?.name}<Button variant="ghost" size="icon-sm"><SettingsIcon class="size-4" /></Button>
+</div>
+
 <svelte:boundary>
 	{#if space}
 		<div>
