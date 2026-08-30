@@ -4,7 +4,7 @@ class SidebarState {
 	is_collapsed = $state(false);
 	private toggle_callback: (() => void) | null = null;
 	private sidebar_keyboard_shortcut = 'b';
-	private sidebar_size: number = 0;
+	private sidebar_size: number = 20;
 
 	async initialize() {
 		await this.getLayout();
@@ -38,12 +38,12 @@ class SidebarState {
 		this.sidebar_size = size;
 	}
 
-	saveLayout() {
-		store.setProperty('sidebar_size', this.sidebar_size);
+	async saveLayout() {
+		await store.setProperty('sidebar_size', this.sidebar_size);
 	}
 	async getLayout() {
 		const size = await store.getProperty('sidebar_size');
-		if (size) {
+		if (size !== undefined && size !== null) {
 			this.sidebar_size = Number(size);
 		}
 	}

@@ -10,8 +10,7 @@
 	let containerWidth = $state(0);
 	let is_collapsed = $state(false);
 	let isAnimating = $state(false);
-	let default_size = $state(10);
-	default_size = sidebar.size;
+	let default_size = $state(sidebar.size || 20);
 
 	const MIN_PX = 150;
 	const MAX_PX = 500;
@@ -22,9 +21,13 @@
 
 	let pane: ReturnType<typeof Pane>;
 
-	function resize() {
-		console.log('resize');
-	}
+	onMount(async () => {
+		await sidebar.initialize();
+		if (pane && sidebar.size > 0) {
+			default_size = sidebar.size;
+			pane.resize(sidebar.size);
+		}
+	});
 
 	function toggleCollapse() {
 		isAnimating = true;

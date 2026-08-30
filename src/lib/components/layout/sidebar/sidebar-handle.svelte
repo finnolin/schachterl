@@ -30,10 +30,10 @@
 		}
 	}
 
-	function toggleDragging() {
-		dragging = !dragging;
-		if (!dragging) {
-			sidebar.saveLayout();
+	async function handleDraggingChange(isDragging: boolean) {
+		dragging = isDragging;
+		if (!isDragging) {
+			await sidebar.saveLayout();
 		}
 	}
 </script>
@@ -42,7 +42,7 @@
 	aria-label="Toggle Sidebar"
 	onmousedown={handleMouseDown}
 	onmouseup={handleMouseUp}
-	onDraggingChange={toggleDragging}
+	onDraggingChange={handleDraggingChange}
 	class={cn(
 		'relative w-px bg-border transition-colors duration-100 delay-20 after:absolute after:inset-y-0 after:start-1/2 after:w-2 after:transition-all after:delay-20 after:duration-100 hover:after:bg-border',
 		sidebar.is_collapsed ? 'after:translate-x-0' : 'after:-translate-x-1/2'
