@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PageHeader from '#lib/components/ui/page/page-header.svelte';
+	import PageHeader from '#lib/components/layout/page/page-header.svelte';
 	import UserIndicator from '#lib/components/elements/user-popover/user-indicator.svelte';
 	//Components:
 	// import * as Sidebar from '#lib/components/ui/sidebar/index.js';
@@ -8,7 +8,7 @@
 	import SidebarWrapper from '#lib/components/layout/sidebar/sidebar-wrapper.svelte';
 	import SidebarMain from '#lib/components/layout/sidebar/sidebar-main.svelte';
 	//import SidebarToggle from '#lib/components/layout/sidebar/sidebar-toggle.svelte';
-	import PageContent from '#lib/components/ui/page/page-content.svelte';
+	import PageContent from '#lib/components/layout/page/page-content.svelte';
 
 	let { children } = $props();
 

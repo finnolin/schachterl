@@ -6,17 +6,17 @@
 	import SidebarContent from './sidebar-content.svelte';
 	import SidebarFooter from './sidebar-footer.svelte';
 	import Sidebar from './sidebar.svelte';
-	import ModeToggle from '#lib/components/app-mode-toggle.svelte';
+	import ModeToggle from '#lib/components/features/themes/app-mode-toggle.svelte';
 	import SpaceSelector from '#lib/components/elements/space-selector.svelte';
 	import SidebarIcon from '~icons/tabler/arrow-bar-left';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import TreeNodeItem from '#lib/components/elements/tree/tree-node-item.svelte';
+	import TreeNodeItem from '#lib/components/features/tree/tree-node-item.svelte';
 	// States:
 	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	import { store } from '#lib/local/app/store.svelte.js';
 	import { auth } from '#lib/local/auth/auth.svelte.js';
 	import { sidebar } from './sidebar_state.svelte';
-	import { tree, buildNested, type TreeNode } from '#lib/local/utils/tree.svelte.js';
+	import { tree, buildNested, type TreeNode } from '#lib/components/features/tree/tree.svelte.js';
 
 	// Repos:
 	import { Resources } from '#lib/local/repositories/Resources.js';

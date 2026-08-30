@@ -1,8 +1,8 @@
 import { type Resource } from '#lib/local/db/schema.js';
 import { Resources, compareResources } from '#lib/local/repositories/Resources.js';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import { subscribeToKeys } from './invalidation';
-import { app_context } from '../app/app-context.svelte';
+import { subscribeToKeys } from '#lib/local/utils/invalidation.js';
+import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 export type TreeNode = Resource & { children: TreeNode[] };
 

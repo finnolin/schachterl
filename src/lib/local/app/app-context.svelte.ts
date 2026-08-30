@@ -7,7 +7,7 @@ import * as schema from '#lib/local/db/schema.js';
 import { relations } from '#lib/local/db/relations.js';
 import { store } from '#lib/local/app/store.svelte.js';
 import { auth } from '#lib/local/auth/auth.svelte.js';
-import { tree } from '../utils/tree.svelte';
+import { tree } from '#lib/components/features/tree/tree.svelte.js';
 import { Spaces } from '../repositories/Spaces';
 import { Resources } from '../repositories/Resources';
 import { LiveQuery } from '../utils/live-query.svelte';

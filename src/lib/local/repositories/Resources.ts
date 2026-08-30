@@ -5,7 +5,7 @@ import { eq, and, isNull, asc, desc, type SQLWrapper, type SQL } from 'drizzle-o
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 import { generateKeyBetween, generateJitteredKeyBetween } from 'fractional-indexing-jittered';
-import { tree } from '#lib/local/utils/tree.svelte.js';
+import { tree } from '#lib/components/features/tree/tree.svelte.js';
 import { notify } from '../utils/invalidation';
 
 type ResourceFilter = Partial<Pick<Resource, 'parent_id' | 'space_id'>>;

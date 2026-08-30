@@ -3,7 +3,7 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn } from '#lib/utils.js';
 	import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
-	import Button from '../button/button.svelte';
+	import Button from '../../ui/button/button.svelte';
 	import SidebarIcon from '~icons/tabler/arrow-bar-right';
 	import SettingsIcon from '~icons/lucide/settings';
 	import SpaceSelector from '#lib/components/elements/space-selector.svelte';

@@ -8,7 +8,7 @@ import log from '#lib/logger.svelte.js';
 import { coerce } from '#lib/utils.js';
 import { notify } from '../utils/invalidation';
 import type { Change as RemoteChange } from '#lib/server/db/schema.js';
-import { tree } from '../utils/tree.svelte';
+import { tree } from '#lib/components/features/tree/tree.svelte.js';
 
 const NO_COALESCE_FIELDS: Record<string, string[]> = {
 	resource: ['parent_id']
