@@ -22,6 +22,8 @@ class Store {
 	sidebar_collapsed: string | undefined = $state();
 	sync_connection_target: string | undefined = $state();
 
+	initialized: boolean = $state(false);
+
 	constructor() {
 		this.is_tauri = isTauri();
 	}
@@ -47,6 +49,7 @@ class Store {
 		await this.getProperty('sidebar_collapsed');
 		await this.getProperty('sync_connection_target');
 		await this.ensureClientId();
+		this.initialized = true;
 	}
 
 	async getProperty<K extends keyof Store>(key: K): Promise<Store[K] | undefined> {

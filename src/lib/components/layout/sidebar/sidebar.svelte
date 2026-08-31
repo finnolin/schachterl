@@ -22,13 +22,17 @@
 	let collapsed_size = 0;
 
 	let pane: ReturnType<typeof Pane>;
+	let init: boolean = false;
 
 	onMount(async () => {
-		console.log('before sidebar init');
-		await sidebar.initialize();
-		console.log('after sidebar init');
+		// if (store.sidebar_collapsed) {
+		// 	console.log('sidebar onmount collapsed:', store.sidebar_collapsed);
+		// 	pane.collapse();
+		// }
+		// console.log('before sidebar init');
+		// await sidebar.initialize();
+		// console.log('after sidebar init');
 		//console.log(sidebar.);
-
 		// if (pane && sidebar.size > 0) {
 		// 	default_size = sidebar.size;
 		// 	pane.resize(sidebar.size);
@@ -36,6 +40,7 @@
 	});
 
 	function toggleCollapse() {
+		console.log('sidebar toggleCollapse');
 		isAnimating = true;
 		if (is_collapsed) {
 			//sidebar.sidebar_collapsed = false;
@@ -64,18 +69,25 @@
 	collapsedSize={collapsed_size}
 	onCollapse={() => {
 		//is_collapsed = true;
-		console.log('collapse!');
+		init = true;
 		store.setProperty('sidebar_collapsed', 'true');
 		sidebar.sidebar_collapsed = true;
 	}}
 	onExpand={() => {
-		console.log('expand!');
+		if (store.sidebar_collapsed === 'true' && init == false) {
+			pane.collapse();
+			return;
+		}
 		//is_collapsed = false;
 		store.setProperty('sidebar_collapsed', 'false');
 		sidebar.sidebar_collapsed = false;
 	}}
 	onResize={(size) => {
-		sidebar.setSidebarSize(size);
+		// PaneForge emits onResize when collapsing (size === collapsedSize).
+		// Don't overwrite the remembered expanded width with collapsed width.
+		if (size > collapsed_size) {
+			sidebar.setSidebarSize(size);
+		}
 	}}
 	class={cn(
 		isAnimating && 'transition-all duration-200 ease-out',
@@ -84,7 +96,5 @@
 	<!-- <button onclick={toggleCollapse}>
 		{is_collapsed ? 'Expand' : 'Collapse'}
 	</button> -->
-	{default_size}
-	{is_collapsed}
 	{@render children()}
 </Resizable.Pane>
