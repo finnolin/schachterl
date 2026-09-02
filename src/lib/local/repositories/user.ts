@@ -1,25 +1,22 @@
-import { local_db } from '../db';
+import { app_context as app } from '../app/app-context.svelte';
+import { Changes } from './Changes';
 
 export class Users {
-	private db = local_db.db;
-	private schema = local_db.schema;
-
-	constructor() {}
+	private db = app.db;
+	private schema = app.schema;
 
 	async add() {
-		// create user in local db
 		const [user] = await this.db.insert(this.schema.user).values({ name: 'local' }).returning();
-		console.log(user);
-		// create change in local db
-		const change_out = await this.db
-			.insert(this.schema.change)
-			.values({
-				entity_id: user.id,
-				entity_type: 'user',
-				op: 'create',
-				patch: JSON.stringify(user)
-			})
-			.returning();
-		console.log(change_out);
+		await new Changes().recordChange({
+			entity_id: user.id,
+			entity_type: 'user',
+			op: 'create',
+			patch: user
+		});
+	}
+
+	async getUsers() {
+		const users = await this.db.select().from(this.schema.user);
+		return users;
 	}
 }

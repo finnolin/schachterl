@@ -35,8 +35,20 @@ export class AppContext {
 	// private resource_cache = new SvelteMap<string, Resource>();
 
 	current_space: SpaceWithTypes | undefined = $state();
+	current_space_id: string | undefined = $state();
 	spaces_query: LiveQuery<Space[]> | null = $state(null);
 	resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
+
+	// * Live (reactive) version of `current_space`.
+	// Recreated whenever the focused space changes, refetched whenever one of
+	// its invalidation keys is notified.
+	space_query: LiveQuery<SpaceWithTypes> | null = $derived.by(() => {
+		const space_id = this.current_space_id;
+		if (!space_id) return null;
+		return new LiveQuery(['spaces', 'resource_types', `space:${space_id}`], () =>
+			new Spaces().getSpaceById(space_id)
+		);
+	});
 
 	loading_space: boolean = $state(false);
 
@@ -190,7 +202,9 @@ export class AppContext {
 	async setSpaceById(space_id: string) {
 		if (tree.space_id !== space_id) {
 			await tree.load(space_id);
+			console.log('tree load');
 		}
+		this.current_space_id = space_id;
 		const space = await new Spaces().getSpaceById(space_id);
 		this.current_space = space;
 	}
@@ -211,12 +225,26 @@ export class AppContext {
 
 	async clearFocus() {
 		this.current_space = undefined;
+		this.current_space_id = undefined;
 		this.focus = undefined;
 		this.focused_item = undefined;
 	}
 
 	get space() {
 		return this.current_space;
+	}
+
+	// * Preferred read path in the UI: reactive, auto-refetching space.
+	get live_space() {
+		return this.space_query?.current;
+	}
+
+	get live_space_loading() {
+		return this.space_query?.loading ?? false;
+	}
+
+	get live_space_error() {
+		return this.space_query?.error;
 	}
 
 	get focused() {

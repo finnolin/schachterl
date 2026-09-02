@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "038670f0-22c5-492b-b21d-ec439e2fae5a",
+  "id": "45cabfaf-a23b-47d5-87b7-71c1ebb4f59c",
   "prevIds": [
-    "ab9b5830-f6d3-4c4e-b273-ce1c728f411f"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -1236,6 +1236,19 @@
       "generated": null,
       "identity": null,
       "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "space"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "icon",
       "entityType": "columns",
       "schema": "public",
       "table": "space"

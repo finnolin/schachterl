@@ -47,10 +47,12 @@ export class Changes {
 				.limit(1);
 
 			if (pending && pending.op !== 'delete') {
-				await db
+				const [updated_change] = await db
 					.update(schema.change)
 					.set({ patch: { ...(pending.patch as object), ...patch } })
-					.where(eq(schema.change.seq, pending.seq));
+					.where(eq(schema.change.seq, pending.seq))
+					.returning();
+				log.db.debug('update change:', updated_change);
 				return;
 			}
 		}
@@ -59,7 +61,7 @@ export class Changes {
 			.insert(schema.change)
 			.values({ entity_type, entity_id, op, patch: patch ?? null })
 			.returning();
-		log.db.debug(new_change);
+		log.db.debug('new change:', new_change);
 	}
 
 	private canCoalesce(entity_type: string, patch: Record<string, unknown>) {

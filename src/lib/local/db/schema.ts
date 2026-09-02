@@ -208,6 +208,7 @@ export const space = sqliteTable('space', {
 		.primaryKey()
 		.$defaultFn(() => uuid()),
 	name: text('name').notNull().default('New Space'),
+	icon: text('icon'),
 	default_resource_type: text('default_resource_type')
 		.notNull()
 		.references(() => resource_type.id),

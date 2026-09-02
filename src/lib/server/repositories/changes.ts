@@ -243,8 +243,12 @@ export class Changes {
 			return 'denied_write';
 		}
 		if (change.entity_type === 'user') {
-			if (change.op !== 'update') return 'denied_write';
-			return change.entity_id === user_id ? 'allow' : 'denied_write';
+			if (change.op === 'create') return user_role === 'admin' ? 'allow' : 'denied_write';
+			if (change.op === 'update') {
+				if (user_role === 'admin') return 'allow';
+				return change.entity_id === user_id ? 'allow' : 'denied_write';
+			}
+			return 'denied_write';
 		}
 
 		if (!space_id) return 'allow';
@@ -273,9 +277,9 @@ export class Changes {
 	// TODO: for relationships: validate endpoints belong to space_id — authz, not just integrity
 
 	private async applyOp(tx: ServerTx, change: Change) {
-		if (change.entity_type === 'user' && change.op !== 'update') {
-			throw new Error(`op '${change.op}' not allowed on user`);
-		}
+		// if (change.entity_type === 'user' && change.op !== 'update') {
+		// 	throw new Error(`op '${change.op}' not allowed on user`);
+		// }
 		const table = TABLES[change.entity_type]; // change.entity_type is EnumSycnedTables → no `as`, no undefined check needed
 		const patch = coerce(change.patch);
 

@@ -15,7 +15,6 @@
 
 	//Icons:
 	import UserIcon from '~icons/tabler/user-circle';
-	import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 	async function push() {
 		await sync_client.push();
@@ -63,12 +62,15 @@
 				{local_db.db_string}
 			{/if}
 		</div>
-		{#if auth.session}
-			<Button
-				onclick={() => {
-					auth.logout();
-				}}>Logout</Button>
-		{/if}
+		<div class="flex flex-col gap-2">
+			<Button href="/app/admin" variant="outline">Admin</Button>
+			{#if auth.session}
+				<Button
+					onclick={() => {
+						auth.logout();
+					}}>Logout</Button>
+			{/if}
+		</div>
 		<Separator />
 
 		{#if server_connection.connected}

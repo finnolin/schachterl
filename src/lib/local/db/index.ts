@@ -117,7 +117,7 @@ export class DatabaseService {
 			// Set in_flight of all changes to false
 			await this.drizzle_db.update(schema.change).set({ in_flight: false });
 			app_context.setDb(this.drizzle_db);
-			goto(resolve('/app'));
+			//goto(resolve('/app'));
 			return this.drizzle_db;
 		} catch (error) {
 			console.error('Database initialization error:', error);

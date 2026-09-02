@@ -29,6 +29,10 @@
 	}
 
 	function openSettings() {
+		if (page.url.pathname.startsWith(resolve('/app/admin'))) {
+			goto(resolve('/app/admin'));
+			return;
+		}
 		if (!app.focus) return;
 		const { type, id } = app.focus;
 		if (type === 'space') {

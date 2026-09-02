@@ -55,7 +55,7 @@
 	</SidebarHeader>
 	<SidebarContent>
 		<div class="flex flex-col">
-			{#if app.space}
+			{#if app.current_space}
 				{#each resources as node (node.id)}
 					{@render treeNode(node, 0)}
 				{/each}

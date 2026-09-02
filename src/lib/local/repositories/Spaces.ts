@@ -10,7 +10,10 @@ export class Spaces {
 	async createSpace(space: SpaceInsert) {
 		const db = app.db;
 		const schema = app.schema;
-		const user_id = await store.ensureLocalUserId();
+		if (!store.remote_user_id) {
+			return;
+		}
+		const user_id = store.remote_user_id;
 
 		const [row] = await db.insert(schema.space).values(space).returning();
 
@@ -55,6 +58,23 @@ export class Spaces {
 		notify('spaces');
 		return row;
 	}
+	async updateSpace(
+		id: string,
+		values: Partial<Pick<Space, 'name' | 'default_resource_type' | 'icon'>>
+	) {
+		await app.db.update(app.schema.space).set(values).where(eq(app.schema.space.id, id));
+
+		await new Changes().recordChange({
+			entity_id: id,
+			entity_type: 'space',
+			op: 'update',
+			patch: values
+		});
+
+		notify('spaces', 'space:' + id);
+		console.log('updated space');
+	}
+
 	async deleteSpace(id: string) {
 		const deleted_at = new Date();
 		const [row] = await app.db
@@ -97,6 +117,7 @@ export class Spaces {
 				singular: app.schema.resource_type.singular,
 				plural: app.schema.resource_type.plural,
 				icon: app.schema.resource_type.icon,
+				description: app.schema.resource_type.description,
 				field_config: app.schema.resource_type.field_config
 			})
 			.from(app.schema.space_resource_type)
@@ -112,6 +133,26 @@ export class Spaces {
 				)
 			);
 
-		return { ...space, resource_types: types };
+		const space_users = await app.db
+			.select()
+			.from(app.schema.space_user)
+			.where(and(eq(app.schema.space_user.space_id, id), isNull(app.schema.space_user.deleted_at)));
+
+		const users = await app.db
+			.select({
+				// pull the global type fields, not the junction row
+				id: app.schema.user.id,
+				name: app.schema.user.name,
+				role: app.schema.space_user.role
+			})
+			.from(app.schema.space_user)
+			.innerJoin(app.schema.user, eq(app.schema.space_user.user_id, app.schema.user.id))
+			.where(and(eq(app.schema.space_user.space_id, id), isNull(app.schema.space_user.deleted_at)));
+
+		return { ...space, resource_types: types, space_users, users: users };
+	}
+
+	async setDefaultResourceType(space_id: string, resource_type_id: string) {
+		this.updateSpace(space_id, { default_resource_type: resource_type_id });
 	}
 }

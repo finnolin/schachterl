@@ -224,6 +224,7 @@ export type Relationship = typeof relationship.$inferSelect;
 export const space = pgTable('space', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	name: text('name').notNull().default('New Space'),
+	icon: text('icon'),
 	default_resource_type: uuid('default_resource_type')
 		.notNull()
 		.references(() => resource_type.id),

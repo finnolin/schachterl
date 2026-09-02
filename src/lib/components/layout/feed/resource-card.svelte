@@ -2,12 +2,16 @@
 	import * as Item from '#lib/components/ui/item/index.js';
 	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
 	import { Resources } from '#lib/local/repositories/Resources.js';
-	import type { Space } from '#lib/local/db/schema.js';
 	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	import { generateRandomNoteTitle } from '#lib/utils.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	let { space }: { space: Space } = $props();
+	import { getIconComponent } from '#lib/components/features/icons/icon-registry.js';
+	import type { Spaces } from '#lib/local/repositories/Spaces.js';
+	import StickyNoteIcon from '~icons/lucide/sticky-note';
+
+	type SpaceWithTypes = NonNullable<Awaited<ReturnType<Spaces['getSpaceById']>>>;
+	let { space }: { space: SpaceWithTypes } = $props();
 
 	const resources_query = $derived(
 		new LiveQuery(['resources', `space:${space.id}`], () =>
@@ -18,6 +22,14 @@
 		)
 	);
 	const resources = $derived(resources_query.current ?? []);
+	const resource_type_icon_by_id = $derived(
+		new Map(
+			(space.resource_types ?? []).map((resource_type) => [
+				resource_type.id,
+				getIconComponent(resource_type.icon)
+			])
+		)
+	);
 
 	async function addResource() {
 		if (!app.current_space) return;
@@ -83,7 +95,15 @@
 						class="aspect-square w-full rounded-sm object-cover" />
 				</Item.Header>
 				<Item.Content>
-					<Item.Title>{resource.name}</Item.Title>
+					<Item.Title>
+						{@const ResourceIcon = resource.type ? resource_type_icon_by_id.get(resource.type) : null}
+						{#if ResourceIcon}
+							<ResourceIcon class="size-4 shrink-0" />
+						{:else}
+							<StickyNoteIcon class="size-4 shrink-0" />
+						{/if}
+						{resource.name}
+					</Item.Title>
 					<Item.Description>{resource.id}</Item.Description>
 				</Item.Content>
 			</Item.Root>

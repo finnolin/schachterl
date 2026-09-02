@@ -101,17 +101,24 @@ CREATE TABLE `resource_type` (
 CREATE TABLE `space` (
 	`id` text PRIMARY KEY,
 	`name` text DEFAULT 'New Space' NOT NULL,
+	`icon` text,
+	`default_resource_type` text NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
-	`deleted_at` integer
+	`deleted_at` integer,
+	CONSTRAINT `fk_space_default_resource_type_resource_type_id_fk` FOREIGN KEY (`default_resource_type`) REFERENCES `resource_type`(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `space_resource_type` (
 	`id` text PRIMARY KEY,
 	`space_id` text NOT NULL,
 	`resource_type_id` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`deleted_at` integer,
 	CONSTRAINT `fk_space_resource_type_space_id_space_id_fk` FOREIGN KEY (`space_id`) REFERENCES `space`(`id`),
-	CONSTRAINT `fk_space_resource_type_resource_type_id_resource_type_id_fk` FOREIGN KEY (`resource_type_id`) REFERENCES `resource_type`(`id`)
+	CONSTRAINT `fk_space_resource_type_resource_type_id_resource_type_id_fk` FOREIGN KEY (`resource_type_id`) REFERENCES `resource_type`(`id`),
+	CONSTRAINT `space_recource_type_uq` UNIQUE(`space_id`,`resource_type_id`)
 );
 --> statement-breakpoint
 CREATE TABLE `space_user` (
@@ -121,6 +128,7 @@ CREATE TABLE `space_user` (
 	`role` text DEFAULT 'viewer' NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
+	`deleted_at` integer,
 	CONSTRAINT `fk_space_user_space_id_space_id_fk` FOREIGN KEY (`space_id`) REFERENCES `space`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_space_user_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `space_user_space_user_uq` UNIQUE(`space_id`,`user_id`)
@@ -137,4 +145,5 @@ CREATE INDEX `rel_to_idx` ON `relationship` (`to_resource`);--> statement-breakp
 CREATE INDEX `rel_type_idx` ON `relationship` (`relationship_type`);--> statement-breakpoint
 CREATE INDEX `resource_space_id_idx` ON `resource` (`space_id`);--> statement-breakpoint
 CREATE INDEX `resource_parent_sort_idx` ON `resource` (`parent_id`,`sort_order`);--> statement-breakpoint
+CREATE INDEX `space_recource_type_idx` ON `space_resource_type` (`resource_type_id`);--> statement-breakpoint
 CREATE INDEX `space_user_user_id_idx` ON `space_user` (`user_id`);

@@ -1,1 +1,0 @@
-ALTER TABLE `space` ADD `default_resource_type` text NOT NULL REFERENCES resource_type(id);

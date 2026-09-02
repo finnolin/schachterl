@@ -4,6 +4,7 @@ CREATE TYPE "user_roles" AS ENUM('user', 'admin');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"user_id" uuid,
+	"issuer" text,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
 	"access_token" text,
@@ -111,6 +112,8 @@ CREATE TABLE "session" (
 CREATE TABLE "space" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"name" text DEFAULT 'New Space' NOT NULL,
+	"icon" text,
+	"default_resource_type" uuid NOT NULL,
 	"created_by" uuid NOT NULL,
 	"created_at" timestamp with time zone,
 	"updated_at" timestamp with time zone NOT NULL,
@@ -179,6 +182,7 @@ ALTER TABLE "resource" ADD CONSTRAINT "resource_parent_id_resource_id_fkey" FORE
 ALTER TABLE "resource" ADD CONSTRAINT "resource_type_resource_type_id_fkey" FOREIGN KEY ("type") REFERENCES "resource_type"("id");--> statement-breakpoint
 ALTER TABLE "resource" ADD CONSTRAINT "resource_image_media_id_fkey" FOREIGN KEY ("image") REFERENCES "media"("id");--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "space" ADD CONSTRAINT "space_default_resource_type_resource_type_id_fkey" FOREIGN KEY ("default_resource_type") REFERENCES "resource_type"("id");--> statement-breakpoint
 ALTER TABLE "space" ADD CONSTRAINT "space_created_by_user_id_fkey" FOREIGN KEY ("created_by") REFERENCES "user"("id");--> statement-breakpoint
 ALTER TABLE "space_resource_type" ADD CONSTRAINT "space_resource_type_space_id_space_id_fkey" FOREIGN KEY ("space_id") REFERENCES "space"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "space_resource_type" ADD CONSTRAINT "space_resource_type_resource_type_id_resource_type_id_fkey" FOREIGN KEY ("resource_type_id") REFERENCES "resource_type"("id") ON DELETE CASCADE;--> statement-breakpoint

@@ -1,2 +1,0 @@
-ALTER TABLE "space" ADD COLUMN "default_resource_type" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "space" ADD CONSTRAINT "space_default_resource_type_resource_type_id_fkey" FOREIGN KEY ("default_resource_type") REFERENCES "resource_type"("id");
