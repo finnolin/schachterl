@@ -70,6 +70,7 @@
 									name,
 									default_resource_type: NOTE_TYPE_ID
 								});
+								if (!new_space) return;
 								await goto(resolve('/app/space/[space_id]', { space_id: new_space.id }));
 							}}>Create {value_input}</Button>
 					{/if}

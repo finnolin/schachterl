@@ -1,6 +1,6 @@
 import { db, schema, type ServerTx } from '../db';
 import { coerce } from '#lib/utils.js';
-import { createSelectSchema } from 'drizzle-orm/zod';
+import { createSelectSchema } from 'drizzle-zod';
 import * as local_schema from '#lib/local/db/schema.js';
 import { type EnumSycnedTables } from '#lib/local/db/schema.js';
 import { type PgTable, type PgColumn } from 'drizzle-orm/pg-core';
@@ -280,7 +280,8 @@ export class Changes {
 		// if (change.entity_type === 'user' && change.op !== 'update') {
 		// 	throw new Error(`op '${change.op}' not allowed on user`);
 		// }
-		const table = TABLES[change.entity_type]; // change.entity_type is EnumSycnedTables → no `as`, no undefined check needed
+		const entity_type = change.entity_type as EnumSycnedTables;
+		const table = TABLES[entity_type];
 		const patch = coerce(change.patch);
 
 		switch (change.op) {
@@ -303,7 +304,8 @@ export class Changes {
 	}
 
 	private async snapshot(tx: ServerTx, change: Change): Promise<Record<string, unknown>> {
-		const table = TABLES[change.entity_type];
+		const entity_type = change.entity_type as EnumSycnedTables;
+		const table = TABLES[entity_type];
 		const [row] = await tx.select().from(table).where(eq(table.id, change.entity_id)).limit(1);
 
 		return row ?? { id: change.entity_id, _missing: true };

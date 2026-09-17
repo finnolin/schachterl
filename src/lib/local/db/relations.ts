@@ -1,4 +1,6 @@
-import { defineRelations } from 'drizzle-orm';
 import * as schema from './schema';
 
-export const relations = defineRelations(schema, () => ({}));
+// Drizzle 0.x receives the complete schema object through the `schema` config
+// property. There are currently no relational-query definitions for the local
+// database, so this is intentionally just the table schema.
+export const relations = schema;

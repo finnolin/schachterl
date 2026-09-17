@@ -12,7 +12,7 @@
 	import { store } from '#lib/local/app/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
-	import { app_context } from '#lib/local/app/app-context.svelte.ts';
+	import { app_context } from '#lib/local/app/app-context.svelte.js';
 
 	let { children } = $props();
 

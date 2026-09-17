@@ -2,6 +2,6 @@
 	let { children } = $props();
 </script>
 
-<div class="p-2 flex-1 overflow-auto">
+<div class="p-2 flex-1 min-h-0 overflow-auto">
 	{@render children()}
 </div>

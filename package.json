@@ -30,9 +30,9 @@
 		"@iconify-json/tabler": "^1.2.37",
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.27.0",
-		"@sveltejs/adapter-node": "next",
-		"@sveltejs/adapter-static": "next",
-		"@sveltejs/kit": "next",
+		"@sveltejs/adapter-node": "^6.0.0-next.12",
+		"@sveltejs/adapter-static": "^4.0.0-next.4",
+		"@sveltejs/kit": "^3.0.0-next.27",
 		"@sveltejs/load-config": "^0.2.2",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@tailwindcss/typography": "^0.5.19",
@@ -42,17 +42,18 @@
 		"clsx": "^2.1.1",
 		"copyfiles": "^2.4.1",
 		"cross-env": "^10.1.0",
-		"drizzle-kit": "^1.0.0-rc.4",
+		"drizzle-kit": "^0.31.10",
 		"eslint": "^9.39.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.20.0",
 		"globals": "^16.5.0",
+		"jose": "^6.2.12",
 		"paneforge": "^1.0.2",
 		"prettier": "^3.9.5",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.1",
 		"rimraf": "^6.1.2",
-		"svelte": "^5.56.5",
+		"svelte": "^5.57.0",
 		"svelte-check": "^4.7.5",
 		"sveltekit-sse": "^0.15.1",
 		"tailwind-merge": "^3.4.0",
@@ -65,12 +66,16 @@
 		"vite": "^8.1.4"
 	},
 	"dependencies": {
+		"@powersync/drizzle-driver": "^0.8.0",
+		"@powersync/tauri-plugin": "^0.0.6",
+		"@powersync/web": "^2.3.1",
 		"@tauri-apps/plugin-process": "^2.3.1",
 		"@tauri-apps/plugin-sql": "^2.3.1",
 		"@tauri-apps/plugin-store": "^2.4.2",
 		"better-auth": "^1.7.1",
 		"bits-ui": "^2.18.1",
-		"drizzle-orm": "^1.0.0-rc.4",
+		"drizzle-orm": "^0.45.2",
+		"drizzle-zod": "^0.8.3",
 		"fractional-indexing": "^4.0.0",
 		"fractional-indexing-jittered": "^1.0.0",
 		"mode-watcher": "^1.1.0",
@@ -86,8 +91,6 @@
 	},
 	"overrides": {
 		"better-auth": {
-			"drizzle-kit": "1.0.0-rc.4",
-			"drizzle-orm": "$drizzle-orm",
 			"@sveltejs/kit": "next"
 		},
 		"sveltekit-sse": {
@@ -95,7 +98,9 @@
 		},
 		"runed": {
 			"@sveltejs/kit": "next"
-		}
+		},
+		"@powersync/common": "2.2.1",
+		"@powersync/shared-internals": "1.2.0"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",

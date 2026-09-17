@@ -4,6 +4,6 @@
 	let { children } = $props();
 </script>
 
-<Resizable.Pane>
+<Resizable.Pane class="flex flex-col h-dvh">
 	{@render children()}
 </Resizable.Pane>

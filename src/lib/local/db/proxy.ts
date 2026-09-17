@@ -39,13 +39,13 @@ export function createProxyTauri(db_name: string) {
 
 			return { rows: results };
 		},
-		{ relations }
+		{ schema: relations }
 	);
 }
 
 export function createProxySQLocal(db_name: string) {
 	const { driver, batchDriver } = new SQLocalDrizzle(db_name);
-	return drizzle(driver, batchDriver, { relations: relations });
+	return drizzle(driver, batchDriver, { schema: relations });
 }
 
 function isSelectQuery(sql: string): boolean {

@@ -16,6 +16,6 @@ const client = postgres(
 	}
 );
 
-export const db = drizzle({ client, relations });
+export const db = drizzle({ client, schema: { ...schema, ...relations } });
 export { schema };
 export type ServerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];

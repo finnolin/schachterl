@@ -1,3 +1,4 @@
+import { DrizzleAppSchema } from '@powersync/drizzle-driver';
 import {
 	sqliteTable,
 	text,
@@ -284,6 +285,14 @@ export const space_resource_type = sqliteTable(
 	]
 );
 export type SpaceResourceType = typeof space_resource_type.$inferSelect;
+
+export const drizzle_schema = {
+	user,
+	space,
+	resource
+};
+
+export const ps_schema = new DrizzleAppSchema(drizzle_schema);
 
 /*
  * Resource Types:

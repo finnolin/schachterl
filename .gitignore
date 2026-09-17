@@ -12,6 +12,7 @@ node_modules
 /pgdumps
 /pginit
 
+
 # OS
 .DS_Store
 Thumbs.db
@@ -21,6 +22,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+
+powersync/dev-private-key.json
 
 # Vite
 vite.config.js.timestamp-*

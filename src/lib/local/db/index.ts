@@ -3,31 +3,46 @@ import { createProxyTauri, createProxySQLocal } from './proxy';
 import { desc, eq } from 'drizzle-orm';
 import { type SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
 import * as schema from './schema';
+import { ps_schema, drizzle_schema } from './schema';
 import Database from '@tauri-apps/plugin-sql';
 import { isTauri } from '@tauri-apps/api/core';
 import { store } from '../app/store.svelte';
 import { relations } from './relations';
 import { app_context } from '../app/app-context.svelte';
 import { BUILTIN_RESOURCE_TYPES } from '#lib/local/utils/ids.js';
+import { PowerSyncDatabase } from '@powersync/web';
+import { PowerSyncTauriDatabase } from '@powersync/tauri-plugin';
+import { wrapPowerSyncWithDrizzle } from '@powersync/drizzle-driver';
+import { appDataDir } from '@tauri-apps/api/path';
 
 import { SQLocal } from 'sqlocal';
 import log from '#lib/logger.svelte.js';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 
-// ---------------------------------------------------------------------------
-// Migration discovery (drizzle-kit v3 layout, no journal.json)
-//
-// New folder structure:
-//   drizzle/migrations/
-//     20260716022237_groovy_puma/
-//       migration.sql
-//       snapshot.json
-//
-// The folder name starts with a fixed-width timestamp, so lexicographic
-// sorting of the folder names yields the correct application order.
-// The folder name *is* the tag.
-// ---------------------------------------------------------------------------
+export const powerSyncDb = new PowerSyncDatabase({
+	database: {
+		dbFilename: 'test.sqlite'
+	},
+	schema: ps_schema
+});
+
+// This is the DB you will use in queries
+export const db = wrapPowerSyncWithDrizzle(powerSyncDb, {
+	schema: drizzle_schema
+});
+
+export const powerSyncTauriDb = new PowerSyncTauriDatabase({
+	database: {
+		dbFilename: 'test.sqlite',
+		dbLocationAsync: appDataDir
+	},
+	schema: ps_schema
+});
+// This is the DB you will use in queries
+export const db_tauri = wrapPowerSyncWithDrizzle(powerSyncTauriDb, {
+	schema: drizzle_schema
+});
 
 type MigrationEntry = {
 	tag: string;

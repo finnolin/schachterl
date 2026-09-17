@@ -1,8 +1,9 @@
 import { Changes } from './Changes';
 import { type ResourceInsert, type Resource } from '../db/schema';
 import { app_context as app } from '../app/app-context.svelte';
-import { eq, and, isNull, asc, desc, type SQLWrapper, type SQL } from 'drizzle-orm';
+import { eq, and, isNull, asc, desc, type SQL } from 'drizzle-orm';
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
+import type { SelectedFields } from 'drizzle-orm/sqlite-core/query-builders/select.types';
 
 import { generateKeyBetween, generateJitteredKeyBetween } from 'fractional-indexing-jittered';
 import { tree } from '#lib/components/features/tree/tree.svelte.js';
@@ -18,8 +19,30 @@ type ResourceQueryOptions = {
 	limit?: number;
 	offset?: number;
 };
+
+type ResourceSelectFields = SelectedFields;
+
 export class Resources {
 	private schema = app.schema;
+
+	private getDefaultResourceBySpaceFields() {
+		const t = this.schema.resource;
+		return {
+			id: t.id,
+			space_id: t.space_id,
+			parent_id: t.parent_id,
+			sort_order: t.sort_order,
+			name: t.name,
+			type: t.type,
+			content: t.content,
+			url: t.url,
+			image: t.image,
+			created_at: t.created_at,
+			updated_at: t.updated_at,
+			deleted_at: t.deleted_at
+			//version: t.version
+		} satisfies ResourceSelectFields;
+	}
 
 	async createResource(values: Omit<ResourceInsert, 'sort_order'>) {
 		const db = app.db;
@@ -36,7 +59,7 @@ export class Resources {
 			op: 'create',
 			patch: row
 		});
-		notify('resources', `resources:space:${values.space_id}`);
+		notify('resources', `resource.space_id:${values.space_id}`);
 		return row;
 	}
 
@@ -49,7 +72,7 @@ export class Resources {
 			op: 'update',
 			patch: values
 		});
-		notify('resources', `resources:space:${space_id}`);
+		notify('resource', `resource.space_id:${space_id}`);
 	}
 
 	async deleteResource(id: string, space_id: string) {
@@ -61,15 +84,17 @@ export class Resources {
 			op: 'delete',
 			patch: {}
 		});
-		notify('resources', `resources:space:${space_id}`);
+		//notify('resource', `resource.space_id:${space_id}`);
 	}
 
-	async getResourcesBySpace(space_id: string) {
+	async getResourcesBySpace<
+		TFields extends ResourceSelectFields = ReturnType<Resources['getDefaultResourceBySpaceFields']>
+	>(space_id: string, fields?: TFields) {
+		const t = this.schema.resource;
 		const db = app.db;
-		return db
-			.select()
-			.from(this.schema.resource)
-			.where(eq(this.schema.resource.space_id, space_id));
+		const selected_fields =
+			fields ?? (this.getDefaultResourceBySpaceFields() as unknown as TFields);
+		return db.select(selected_fields).from(t).where(eq(t.space_id, space_id));
 	}
 
 	async getChildResources(parent_id: string = '') {

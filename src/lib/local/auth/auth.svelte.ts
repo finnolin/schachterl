@@ -64,6 +64,7 @@ class Auth {
 	session: ClientSession | null = $state(null);
 	client: AuthClient | null = null;
 	user: User | null = null;
+	role: 'admin' | 'user' = $state('user');
 
 	async initialize() {
 		if (!store.server_url) {
@@ -107,6 +108,7 @@ class Auth {
 
 		const authed_id = this.session.user.id;
 		this.user = this.session.user;
+		this.role = this.session.user.role;
 		const stored_id = await store.getProperty('remote_user_id');
 		await store.setProperty('client_id', this.session.session.client_id);
 
@@ -125,6 +127,12 @@ class Auth {
 		}
 		log.auth.debug('User + db OK');
 		await server_connection.connect();
+	}
+
+	isAdmin(): boolean {
+		const mode = store.sync_connection?.mode;
+		if (mode === 'local') return true;
+		return mode === 'remote' && !!this.client && this.role === 'admin';
 	}
 
 	async logout() {

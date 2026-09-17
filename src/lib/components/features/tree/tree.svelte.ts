@@ -4,10 +4,32 @@ import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { subscribeToKeys } from '#lib/local/utils/invalidation.js';
 import { app_context } from '#lib/local/app/app-context.svelte.js';
 
-export type TreeNode = Resource & { children: TreeNode[] };
+/** Single source of truth for the resource columns the tree keeps in memory. */
+const TREE_ROW_KEYS = [
+	'id',
+	'name',
+	'sort_order',
+	'parent_id',
+	'space_id',
+	'type',
+	'deleted_at'
+] as const;
+
+export type TreeRow = Pick<Resource, (typeof TREE_ROW_KEYS)[number]>;
+export type TreeNode = TreeRow & { children: TreeNode[] };
+
+/** Build the drizzle select fields for exactly `TreeRow`, from the same key list. */
+function treeRowFields() {
+	const t = app_context.schema.resource;
+	return Object.fromEntries(TREE_ROW_KEYS.map((k) => [k, t[k]])) as Pick<
+		typeof app_context.schema.resource,
+		(typeof TREE_ROW_KEYS)[number]
+	>;
+}
 
 class TreeStore {
-	rows = new SvelteMap<string, Resource>();
+	//rows = new SvelteMap<string, Resource>();
+	rows = new SvelteMap<string, TreeRow>();
 	space_id = $state<string | null>(null);
 	open_nodes = new SvelteSet();
 	loading = $state(false);
@@ -26,7 +48,7 @@ class TreeStore {
 	async #refetch() {
 		if (!this.space_id) return;
 		this.loading = true;
-		const all = await new Resources().getResourcesBySpace(this.space_id);
+		const all = await new Resources().getResourcesBySpace(this.space_id, treeRowFields());
 		const seen = new SvelteSet<string>();
 		for (const r of all) {
 			this.rows.set(r.id, r);
@@ -45,7 +67,7 @@ class TreeStore {
 		this.space_id = null;
 	}
 
-	upsert(row: Resource) {
+	upsert(row: TreeRow) {
 		if (this.space_id && row.space_id !== this.space_id) return;
 		if (row.deleted_at) {
 			this.rows.delete(row.id);
@@ -70,8 +92,8 @@ class TreeStore {
 		return false;
 	}
 
-	ancestorsOf(id: string): Resource[] {
-		const path: Resource[] = [];
+	ancestorsOf(id: string): TreeRow[] {
+		const path: TreeRow[] = [];
 		let current = this.rows.get(id)?.parent_id ?? null;
 		const seen = new SvelteSet<string>();
 		while (current && !seen.has(current)) {
@@ -102,7 +124,7 @@ class TreeStore {
 export const tree = new TreeStore();
 
 /** Flat rows -> nested tree. O(n). */
-export function buildNested(rows: Resource[]): TreeNode[] {
+export function buildNested(rows: TreeRow[]): TreeNode[] {
 	const by_id = new SvelteMap<string, TreeNode>();
 	for (const r of rows) {
 		if (r.deleted_at) continue;
