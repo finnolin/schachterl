@@ -2,6 +2,71 @@ config:
   edition: 3
 
 streams:
-  test:
+  user_data:
     auto_subscribe: true
-    query: SELECT * FROM space
+    queries:
+      # Users are globally readable because users can create spaces and invite
+      # existing users by ID/email. Write authorization still belongs to the
+      # application backend.
+      - |
+        SELECT *
+        FROM "user"
+
+      # Resource types are globally readable reference data. They may be
+      # assigned to spaces through space_resource_type.
+      - |
+        SELECT *
+        FROM resource_type
+
+      # Relationship types are globally readable reference data.
+      - |
+        SELECT *
+        FROM relationship_type
+
+      # Spaces the authenticated user belongs to.
+      - |
+        SELECT s.*
+        FROM space s
+        INNER JOIN space_user su ON su.space_id = s.id
+        WHERE su.user_id = auth.user_id()
+
+      # All memberships for spaces the authenticated user belongs to. This
+      # includes the other members needed for space member lists and invites.
+      - |
+        SELECT members.*
+        FROM space_user members
+        INNER JOIN space_user access
+          ON access.space_id = members.space_id
+        WHERE access.user_id = auth.user_id()
+
+      # Resource types enabled for spaces the authenticated user belongs to.
+      - |
+        SELECT srt.*
+        FROM space_resource_type srt
+        INNER JOIN space_user access
+          ON access.space_id = srt.space_id
+        WHERE access.user_id = auth.user_id()
+
+      # Resources in spaces the authenticated user belongs to.
+      - |
+        SELECT r.*
+        FROM resource r
+        INNER JOIN space_user access
+          ON access.space_id = r.space_id
+        WHERE access.user_id = auth.user_id()
+
+      # Media in spaces the authenticated user belongs to.
+      - |
+        SELECT m.*
+        FROM media m
+        INNER JOIN space_user access
+          ON access.space_id = m.space_id
+        WHERE access.user_id = auth.user_id()
+
+      # Relationships in spaces the authenticated user belongs to.
+      - |
+        SELECT rel.*
+        FROM relationship rel
+        INNER JOIN space_user access
+          ON access.space_id = rel.space_id
+        WHERE access.user_id = auth.user_id()
