@@ -9,13 +9,11 @@ import {
 	integer,
 	pgSequence,
 	jsonb,
-	primaryKey,
 	unique,
 	index,
 	type AnyPgColumn
 } from 'drizzle-orm/pg-core';
 import type { ResourceFieldConfig } from '#lib/local/db/schema.js';
-import { local_db } from '#lib/local/db/index.js';
 
 // * Auth tables:
 export const user_role_enum = pgEnum('user_roles', ['user', 'admin']);
@@ -123,8 +121,7 @@ export const resource_type = pgTable('resource_type', {
 	updated_at: timestamp('updated_at', { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: timestamp('deleted_at', { withTimezone: true })
+		.$onUpdateFn(() => new Date())
 });
 export type ResourceType = typeof resource_type.$inferSelect;
 
@@ -191,8 +188,7 @@ export const relationship_type = pgTable('relationship_type', {
 	updated_at: timestamp('updated_at', { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: timestamp('deleted_at', { withTimezone: true })
+		.$onUpdateFn(() => new Date())
 });
 export type RelationshipType = typeof relationship_type.$inferSelect;
 
@@ -204,14 +200,13 @@ export const relationship = pgTable(
 			.notNull()
 			.references(() => space.id, { onDelete: 'cascade' }),
 		relationship_type: uuid('relationship_type').references(() => relationship_type.id),
-		from_resource: uuid('from_resource').references(() => resource.id),
-		to_resource: uuid('to_resource').references(() => resource.id),
+		from_resource: uuid('from_resource').references(() => resource.id, { onDelete: 'cascade' }),
+		to_resource: uuid('to_resource').references(() => resource.id, { onDelete: 'cascade' }),
 		created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
 		updated_at: timestamp('updated_at', { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: timestamp('deleted_at', { withTimezone: true })
+			.$onUpdateFn(() => new Date())
 	},
 	(t) => [
 		index('rel_from_idx').on(t.from_resource),
@@ -235,8 +230,7 @@ export const space = pgTable('space', {
 	updated_at: timestamp('updated_at', { withTimezone: true })
 		.notNull()
 		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: timestamp('deleted_at', { withTimezone: true })
+		.$onUpdateFn(() => new Date())
 });
 export type Space = typeof space.$inferSelect;
 
@@ -279,8 +273,7 @@ export const space_resource_type = pgTable(
 		updated_at: timestamp('updated_at', { withTimezone: true })
 			.notNull()
 			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: timestamp('deleted_at', { withTimezone: true })
+			.$onUpdateFn(() => new Date())
 	},
 	(t) => [
 		unique('space_resource_type_space_resource_type_uq').on(t.space_id, t.resource_type_id),

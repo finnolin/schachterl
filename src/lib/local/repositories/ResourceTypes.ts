@@ -7,7 +7,7 @@ import {
 	type ResourceType,
 	type SpaceResourceType
 } from '../db/schema';
-import { and, eq, isNull, notInArray } from 'drizzle-orm';
+import { and, eq, notInArray } from 'drizzle-orm';
 
 type BaseCreateResourceTypeInput = {
 	key: string;
@@ -46,12 +46,7 @@ export class ResourcesTypes {
 				this.schema.space_resource_type,
 				eq(this.schema.resource_type.id, this.schema.space_resource_type.resource_type_id)
 			)
-			.where(
-				and(
-					eq(this.schema.space_resource_type.space_id, space_id),
-					isNull(this.schema.space_resource_type.deleted_at)
-				)
-			);
+			.where(eq(this.schema.space_resource_type.space_id, space_id));
 		return resource_types;
 	}
 
@@ -142,8 +137,7 @@ export class ResourcesTypes {
 			.where(
 				and(
 					eq(t.space_resource_type.space_id, space_id),
-					eq(t.space_resource_type.resource_type_id, resource_type_id),
-					isNull(t.space_resource_type.deleted_at)
+					eq(t.space_resource_type.resource_type_id, resource_type_id)
 				)
 			)
 			.limit(1);
@@ -152,13 +146,7 @@ export class ResourcesTypes {
 		const [is_default] = await db
 			.select()
 			.from(t.space)
-			.where(
-				and(
-					eq(t.space.id, space_id),
-					eq(t.space.default_resource_type, resource_type_id),
-					isNull(t.space.deleted_at)
-				)
-			);
+			.where(and(eq(t.space.id, space_id), eq(t.space.default_resource_type, resource_type_id)));
 		if (is_default) {
 			console.log('not allowed');
 			return;
@@ -182,7 +170,7 @@ export class ResourcesTypes {
 		const [resource_type] = await db
 			.select()
 			.from(this.schema.resource_type)
-			.where(and(eq(this.schema.resource_type.id, id), isNull(this.schema.resource_type.deleted_at)))
+			.where(eq(this.schema.resource_type.id, id))
 			.limit(1);
 		return resource_type;
 	}
@@ -192,30 +180,17 @@ export class ResourcesTypes {
 		const attached = await db
 			.select({ resource_type_id: this.schema.space_resource_type.resource_type_id })
 			.from(this.schema.space_resource_type)
-			.where(
-				and(
-					eq(this.schema.space_resource_type.space_id, space_id),
-					isNull(this.schema.space_resource_type.deleted_at)
-				)
-			);
+			.where(eq(this.schema.space_resource_type.space_id, space_id));
 
 		const attached_ids = attached.map((row) => row.resource_type_id);
 
 		if (attached_ids.length === 0) {
-			return db
-				.select()
-				.from(this.schema.resource_type)
-				.where(isNull(this.schema.resource_type.deleted_at));
+			return db.select().from(this.schema.resource_type);
 		}
 
 		return db
 			.select()
 			.from(this.schema.resource_type)
-			.where(
-				and(
-					isNull(this.schema.resource_type.deleted_at),
-					notInArray(this.schema.resource_type.id, attached_ids)
-				)
-			);
+			.where(notInArray(this.schema.resource_type.id, attached_ids));
 	}
 }

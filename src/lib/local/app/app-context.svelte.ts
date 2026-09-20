@@ -1,10 +1,9 @@
 import { local_db, DatabaseService } from '#lib/local/db/index.js';
-import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy';
+import type { LocalDrizzleDb } from '#lib/local/db/index.js';
 import log from '#lib/logger.svelte.js';
 import { eq } from 'drizzle-orm';
 import { isTauri } from '@tauri-apps/api/core';
 import * as schema from '#lib/local/db/schema.js';
-import { relations } from '#lib/local/db/relations.js';
 import { store } from '#lib/local/app/store.svelte.js';
 import { auth } from '#lib/local/auth/auth.svelte.js';
 import { tree } from '#lib/components/features/tree/tree.svelte.js';
@@ -28,7 +27,7 @@ type Focus = {
 };
 export class AppContext {
 	private Database: DatabaseService = local_db;
-	drizzle_db: SqliteRemoteDatabase<typeof relations> | null = $state(null);
+	drizzle_db: LocalDrizzleDb | null = $state(null);
 	private drizzle_schema = schema;
 
 	// private space_cache = new SvelteMap<string, SpaceWithTypes>();
@@ -165,7 +164,7 @@ export class AppContext {
 		await this.drizzle_db.delete(schema.app_meta).where(eq(schema.app_meta.key, property_key));
 	}
 
-	setDb(db: SqliteRemoteDatabase<typeof relations>) {
+	setDb(db: LocalDrizzleDb) {
 		this.drizzle_db = db;
 	}
 

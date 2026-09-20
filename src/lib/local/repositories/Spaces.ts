@@ -3,11 +3,11 @@ import { store } from '../app/store.svelte';
 import type { SpaceInsert, Space } from '../db/schema';
 import { Changes } from './Changes';
 import { notify } from '../utils/invalidation';
-import { eq, isNull, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { v7 as uuid } from 'uuid';
 import * as IDs from '../utils/ids';
 export class Spaces {
-	async createSpace(space: SpaceInsert) {
+	async createSpace(space: Omit<SpaceInsert, 'created_by'>) {
 		const db = app.db;
 		const schema = app.schema;
 		if (!store.remote_user_id) {
@@ -15,7 +15,10 @@ export class Spaces {
 		}
 		const user_id = store.remote_user_id;
 
-		const [row] = await db.insert(schema.space).values(space).returning();
+		const [row] = await db
+			.insert(schema.space)
+			.values({ ...space, created_by: user_id })
+			.returning();
 
 		const [membership] = await db
 			.insert(schema.space_user)
@@ -76,27 +79,16 @@ export class Spaces {
 	}
 
 	async deleteSpace(id: string) {
-		const deleted_at = new Date();
 		const [row] = await app.db
-			.update(app.schema.space)
-			.set({ deleted_at })
+			.delete(app.schema.space)
 			.where(eq(app.schema.space.id, id))
 			.returning();
 
-		await new Changes().recordChange({
-			entity_id: id,
-			entity_type: 'space',
-			op: 'update',
-			patch: { deleted_at }
-		});
 		notify('spaces');
 		return row;
 	}
 	async getSpaces() {
-		const spaces = await app.db
-			.select()
-			.from(app.schema.space)
-			.where(isNull(app.schema.space.deleted_at));
+		const spaces = await app.db.select().from(app.schema.space);
 		return spaces;
 	}
 
@@ -125,18 +117,12 @@ export class Spaces {
 				app.schema.resource_type,
 				eq(app.schema.space_resource_type.resource_type_id, app.schema.resource_type.id)
 			)
-			.where(
-				and(
-					eq(app.schema.space_resource_type.space_id, id),
-					isNull(app.schema.space_resource_type.deleted_at),
-					isNull(app.schema.resource_type.deleted_at)
-				)
-			);
+			.where(eq(app.schema.space_resource_type.space_id, id));
 
 		const space_users = await app.db
 			.select()
 			.from(app.schema.space_user)
-			.where(and(eq(app.schema.space_user.space_id, id), isNull(app.schema.space_user.deleted_at)));
+			.where(eq(app.schema.space_user.space_id, id));
 
 		const users = await app.db
 			.select({
@@ -147,7 +133,7 @@ export class Spaces {
 			})
 			.from(app.schema.space_user)
 			.innerJoin(app.schema.user, eq(app.schema.space_user.user_id, app.schema.user.id))
-			.where(and(eq(app.schema.space_user.space_id, id), isNull(app.schema.space_user.deleted_at)));
+			.where(eq(app.schema.space_user.space_id, id));
 
 		return { ...space, resource_types: types, space_users, users: users };
 	}

@@ -14,7 +14,7 @@ The target is:
 - PostgreSQL as the source of truth
 - Drizzle as the type-safe query layer over PowerSync
 
-The migration is partially started: PowerSync dependencies, Tauri integration, Docker service configuration, PostgreSQL replication setup, and an initial Sync Streams file exist. The old local database and custom sync layer are still active.
+The migration is in progress: PowerSync dependencies, Tauri integration, Docker service configuration, PostgreSQL replication setup, secure membership-scoped Sync Streams, the complete client schema, and the user-specific PowerSync database lifecycle are in place. The PowerSync connector, backend upload/auth endpoints, native Tauri sync connector, and old custom sync layer cleanup remain.
 
 ---
 
@@ -35,22 +35,20 @@ The migration is partially started: PowerSync dependencies, Tauri integration, D
 
 ### Still active and must be replaced
 
-- `@tauri-apps/plugin-sql`
-- `sqlocal`
-- `drizzle-orm/sqlite-proxy`
-- Custom migration runner
-- Per-user database filenames
-- Client `change` outbox table
-- `SyncClient` push/pull implementation
-- Custom `/api/v1/sync/push` and `/api/v1/sync/pull` endpoints
-- SSE poke connection and heartbeat/watchdog logic
-- Manual cursor and in-flight handling
-- Manual remote change application
-- `synced`, `in_flight`, `base_version`, and patch-coalescing logic
+- `@tauri-apps/plugin-sql` and `sqlocal` remain installed but are no longer used by `DatabaseService`.
+- `drizzle-orm/sqlite-proxy` and the old proxy module remain in the repository but are no longer the active database path.
+- Client `change` outbox table, temporarily retained as a local-only compatibility table.
+- `SyncClient` push/pull implementation.
+- Custom `/api/v1/sync/push` and `/api/v1/sync/pull` endpoints.
+- SSE poke connection and heartbeat/watchdog logic.
+- Manual cursor and in-flight handling.
+- Manual remote change application.
+- Repository `recordChange()` calls.
+- `synced`, `in_flight`, `base_version`, and patch-coalescing logic.
 
-### Important transitional issue
+### Current transitional state
 
-`src/lib/local/db/index.ts` creates PowerSync databases, but `DatabaseService.initialize()` still opens the old database through `@tauri-apps/plugin-sql` or SQLocal and exposes the old Drizzle proxy. PowerSync is not yet the active application database.
+`src/lib/local/db/index.ts` now opens a user-specific PowerSync database for web and Tauri and wraps it with Drizzle. The database is initialized locally, but synchronization is not connected yet. Legacy `app_meta` and `change` tables are temporarily declared local-only so the old sync code can be removed separately.
 
 ---
 
@@ -106,7 +104,9 @@ The application owns:
 
 ## Phase 0 — Confirm deployment and authentication contract
 
-The repository strongly suggests this target:
+**Status: direction confirmed; authentication implementation remains.**
+
+The repository target is:
 
 - Self-hosted PowerSync in Docker
 - PostgreSQL source database
@@ -134,6 +134,10 @@ Follow the PowerSync skill guardrails:
 ---
 
 ## Phase 1 — Freeze and document the data model
+
+**Status: complete at the decision/schema level.**
+
+The deletion policy, global user/reference data policy, membership access scope, timestamp representation, and relationship cascade behavior have been decided and reflected in the schemas/config.
 
 Compare:
 
@@ -170,6 +174,10 @@ Verify for each table:
 
 ## Phase 2 — Define the complete PowerSync and Drizzle schemas
 
+**Status: complete for the current transition.**
+
+The local Drizzle schema now covers all nine domain tables, `ps_schema` is derived from that complete schema, timestamps use text ISO values, and legacy `app_meta`/`change` tables are temporarily local-only. The old migration history is intentionally not being carried forward.
+
 PowerSync schema rules:
 
 - Do not define `id` in a PowerSync `Table`; PowerSync creates it as `TEXT PRIMARY KEY`.
@@ -189,19 +197,23 @@ src/lib/local/db/
   connector.ts          # fetchCredentials/uploadData connector
 ```
 
-The current `drizzle_schema` only includes:
+The domain `drizzle_schema` now includes:
 
 ```ts
 const drizzle_schema = {
   user,
   space,
-  resource
+  space_user,
+  space_resource_type,
+  resource_type,
+  resource,
+  media,
+  relationship_type,
+  relationship
 };
 ```
 
-Expand it to cover all tables used by repositories and UI.
-
-Do not include the old `change` outbox table in the PowerSync schema.
+The legacy `change` and `app_meta` tables are retained temporarily as local-only compatibility tables and will be removed with the old sync layer.
 
 Likely local-only state:
 
@@ -217,6 +229,10 @@ Keep these in Tauri Store/localStorage or model them as PowerSync local-only tab
 ---
 
 ## Phase 3 — Secure and expand Sync Streams
+
+**Status: implemented locally; deployment/validation still pending.**
+
+The stream now globally syncs the selected public user columns, resource types, and relationship types, while scoping spaces and space-owned data through `space_user` membership. `resource` and `media` rows are not filtered by `deleted_at`, allowing soft-delete updates to sync.
 
 Current `powersync/sync-config.yaml`:
 
@@ -301,6 +317,8 @@ Before deployment, validate the configuration with the PowerSync CLI and confirm
 
 ## Phase 4 — Implement the PowerSync connector
 
+**Status: not started.**
+
 Add:
 
 ```text
@@ -383,6 +401,10 @@ Reuse server repositories and authorization rules where possible instead of bypa
 
 ## Phase 5 — Replace local database creation
 
+**Status: implemented locally; synchronization is not connected yet.**
+
+`src/lib/local/db/index.ts` now creates a user-specific PowerSync-owned database for both web and Tauri, uses the Tauri app-data directory on native, and wraps the active database with the PowerSync Drizzle driver. Per-user filenames are intentionally retained so each user has an isolated local database and sync state.
+
 Replace the old lifecycle in `src/lib/local/db/index.ts` with one PowerSync-owned database.
 
 Conceptually:
@@ -390,7 +412,7 @@ Conceptually:
 ```ts
 export const powerSyncDb = new PowerSyncDatabase({
   database: {
-    dbFilename: 'schachterl.sqlite'
+    dbFilename: `schachterl-${userId}.sqlite`
   },
   schema: powerSyncSchema
 });
@@ -400,38 +422,38 @@ export const db = wrapPowerSyncWithDrizzle(powerSyncDb, {
 });
 ```
 
-Initialize once per app session:
+After the connector is implemented, connect the active user-specific database:
 
 ```ts
 powerSyncDb.connect(connector);
 await powerSyncDb.waitForFirstSync();
 ```
 
-Do not:
+The active database path no longer:
 
-- Open `@tauri-apps/plugin-sql`
-- Create SQLocal
-- Create a `sqlite-proxy`
-- Apply SQL migrations manually
-- Create one database file per user unless explicitly required
+- Opens `@tauri-apps/plugin-sql`
+- Creates SQLocal
+- Creates a `sqlite-proxy`
+- Applies SQL migrations manually
 
-PowerSync owns schema application for synced tables.
+PowerSync owns schema application for synced tables. The old packages and proxy module remain only until dependency cleanup.
 
 ### User switching and logout
 
-When another user may use the device:
+The current implementation retains one database file per user. On a user switch, disconnect and close the old database before opening the new user’s database:
 
 ```ts
-await powerSyncDb.disconnectAndClear();
+await powerSyncDb.disconnect();
+await powerSyncDb.close();
 ```
 
-Use `disconnect()` only when retaining the same user’s local data is safe and desired.
-
-Never retain one user’s synced data for another user.
+Use `disconnectAndClear()` when the user explicitly wants local data removed or when a shared-device security policy requires it. Never use the old user’s database instance for the new user.
 
 ---
 
 ## Phase 6 — Rewrite AppContext boot flow
+
+**Status: not started.** The database type and local initialization path were updated, but authentication-driven PowerSync connection and first-sync gating are still pending.
 
 Current boot flow:
 
@@ -464,15 +486,17 @@ Likely files:
 
 Remove assumptions that:
 
-- `store.user_id` selects a database filename
-- `DatabaseService.initialize()` is the database lifecycle
-- Local and remote users should use separate custom SQLite files
+- `DatabaseService.initialize()` is the eventual database lifecycle rather than a temporary compatibility wrapper
+- The PowerSync connector should be created only after Better Auth resolves the user
+- Web should connect through the JavaScript connector and Tauri through the native Rust connector
 
 A truly unauthenticated local-only mode would need a separate policy because PowerSync credentials require a user identity. Decide whether to remove that mode or implement it as an explicitly separate local-only database.
 
 ---
 
 ## Phase 7 — Rewrite repositories
+
+**Status: not started.** Query code remains compatible through the Drizzle wrapper, but repository writes still record custom changes.
 
 Most query code can remain conceptually similar if the Drizzle wrapper is retained.
 
@@ -519,6 +543,8 @@ Use transactions for:
 
 ## Phase 8 — Replace manual reactivity
 
+**Status: not started.**
+
 Current reactivity:
 
 ```text
@@ -549,6 +575,8 @@ Do not use a separate raw SQLite connection for watches. Writes outside PowerSyn
 
 ## Phase 9 — Remove the old sync layer
 
+**Status: not started.** Complete this only after PowerSync upload/download and the vertical slice are verified.
+
 Once PowerSync upload/download works, remove or archive:
 
 ```text
@@ -576,6 +604,8 @@ The server `change` table may remain for audit/history, but it should no longer 
 ---
 
 ## Phase 10 — Remove obsolete dependencies
+
+**Status: partially complete.** Migration history has been removed. Dependency and legacy sync cleanup remain.
 
 After the new path works:
 
@@ -608,38 +638,21 @@ Verify whether the installed version of `@powersync/web` requires `@journeyapps/
 
 # Important discovered issues
 
-## PowerSync is not active yet
+## PowerSync synchronization is not connected yet
 
-`powerSyncDb` exists, but `DatabaseService.initialize()` still uses the old database path:
+The local PowerSync database opens through the new lifecycle, but the web connector, Better Auth credential endpoint, upload endpoint, PowerSync service auth, and native Tauri connector are not implemented.
 
-```ts
-this.db_connection = await getTauriDb(db_string);
-this.drizzle_db = createProxyTauri(db_string);
-```
+## Legacy sync is still active
 
-## PowerSync schema is incomplete
+Repository writes still call `Changes.recordChange()`, and the old REST/SSE sync path remains. `app_meta` and `change` are therefore retained temporarily as local-only tables. They should be removed only after PowerSync upload/download is verified.
 
-The current `ps_schema` is derived from only:
+## Tauri synchronization requires Rust integration
 
-```ts
-const drizzle_schema = {
-  user,
-  space,
-  resource
-};
-```
+`PowerSyncTauriDatabase.connect()` is not supported from JavaScript by the installed Tauri SDK. The native connector must be implemented in `src-tauri/` using the Rust PowerSync APIs.
 
-Repositories and UI use many more tables.
+## Sync config still needs service validation
 
-## Sync config is too broad
-
-The current stream:
-
-```yaml
-query: SELECT * FROM space
-```
-
-must be replaced with membership-scoped queries before real use.
+The local `powersync/sync-config.yaml` is now membership-scoped and includes the required tables, but it has not yet been validated/deployed against the authorized PowerSync instance.
 
 ## PowerSync does not replace the backend write API
 
@@ -666,20 +679,21 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 # Recommended implementation order
 
-1. Expand and secure `powersync/sync-config.yaml`.
-2. Define the complete PowerSync schema.
-3. Define the complete Drizzle schema mapping.
+1. ~~Expand and secure `powersync/sync-config.yaml`.~~ Done locally; validation/deployment remains.
+2. ~~Define the complete PowerSync schema.~~ Done.
+3. ~~Define the complete Drizzle schema mapping.~~ Done.
 4. Add Better Auth → PowerSync credential issuance.
 5. Add the PowerSync upload endpoint.
-6. Replace `DatabaseService` with a PowerSync database service.
+6. ~~Replace `DatabaseService` with a PowerSync database service.~~ Done locally; sync connection remains.
 7. Update `AppContext` boot/auth/logout lifecycle.
 8. Convert repositories to direct PowerSync writes.
 9. Add Svelte reactive PowerSync query helpers.
-10. Run web and Tauri through the new database path.
-11. Test offline writes and reconnect behavior.
-12. Remove old sync endpoints and SSE.
-13. Remove Tauri SQL/SQLocal dependencies.
-14. Clean up obsolete migrations and change-log code.
+10. Implement the web connector and native Tauri connector.
+11. Validate/deploy the service and test initial download sync.
+12. Test offline writes, uploads, reconnect behavior, and user switching.
+13. Remove old sync endpoints and SSE.
+14. Remove Tauri SQL/SQLocal dependencies.
+15. ~~Remove obsolete migration history.~~ Done. Remove `app_meta` and the client change-log code after the old sync path is retired.
 
 ---
 
@@ -687,12 +701,13 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ## Local database
 
-- [ ] Web opens PowerSync SQLite successfully.
-- [ ] Tauri opens PowerSync SQLite successfully.
-- [ ] No `@tauri-apps/plugin-sql` calls remain.
-- [ ] No SQLocal calls remain.
-- [ ] No custom migration runner is needed for synced tables.
-- [ ] Database data cannot leak between users.
+- [ ] Web opens PowerSync SQLite successfully in a runtime test.
+- [ ] Tauri opens PowerSync SQLite successfully in a runtime test.
+- [x] Active `DatabaseService` no longer calls `@tauri-apps/plugin-sql`.
+- [x] Active `DatabaseService` no longer calls SQLocal.
+- [x] No custom migration runner is needed for the PowerSync database.
+- [x] Per-user database filenames are retained.
+- [ ] Database data cannot leak between users in a runtime user-switch test.
 
 ## Authentication
 
@@ -705,10 +720,10 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ## Download sync
 
-- [ ] All required tables are in the PowerSync schema.
-- [ ] All required tables are in Sync Streams.
-- [ ] Every stream query has proper user/space authorization.
-- [ ] PowerSync service sees the PostgreSQL publication.
+- [x] All required domain tables are in the local PowerSync schema.
+- [x] All required domain tables are represented in Sync Streams.
+- [x] Stream queries use global/public or membership-scoped access as designed.
+- [ ] PowerSync service sees the PostgreSQL publication in a runtime deployment.
 - [ ] Initial sync completes.
 - [ ] Deletes/tombstones behave correctly.
 
@@ -732,20 +747,18 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ---
 
-# Recommended first coding slice
+# Recommended next coding slice
 
-Implement one reversible vertical slice first:
+The local database slice is complete. The next reversible vertical slice is the backend/connector path:
 
-1. Replace the current `ps_schema` with the complete synced schema.
-2. Add a `PowerSyncConnector`.
-3. Add the credentials endpoint.
-4. Add the upload endpoint.
-5. Change `DatabaseService.initialize()` to use only `powerSyncDb`.
-6. Leave the old sync layer present but unused temporarily.
-7. Validate `space` + `resource` creation, upload, remote download, and UI refresh.
-8. Only then migrate the remaining repositories and delete the old sync layer.
+1. Add the Better Auth → PowerSync credentials endpoint.
+2. Add the authenticated PowerSync upload endpoint.
+3. Implement the web connector.
+4. Implement the native Tauri Rust connector.
+5. Validate `space` + `resource` creation, upload, remote download, and UI refresh.
+6. Only then remove repository `Changes.recordChange()` calls and the old sync layer.
 
-This avoids changing database creation, authentication, sync, reactivity, and every repository simultaneously.
+This keeps authentication, uploads, native sync, and old-sync cleanup separable.
 
 ---
 

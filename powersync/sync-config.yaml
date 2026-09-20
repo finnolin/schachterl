@@ -9,7 +9,7 @@ streams:
       # existing users by ID/email. Write authorization still belongs to the
       # application backend.
       - |
-        SELECT *
+        SELECT id, name, created_at
         FROM "user"
 
       # Resource types are globally readable reference data. They may be

@@ -14,9 +14,9 @@ export const drizzle_migrations = sqliteTable('__drizzle_migrations', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	hash: text('hash').notNull(),
 	tag: text('tag').notNull(),
-	created_at: integer('created_at', { mode: 'timestamp_ms' })
+	created_at: text('created_at')
 		.notNull()
-		.$defaultFn(() => new Date())
+		.$defaultFn(() => new Date().toISOString())
 });
 export type Migration = typeof drizzle_migrations.$inferSelect;
 
@@ -50,9 +50,9 @@ export const change = sqliteTable('change', {
 	entity_id: text('entity_id').notNull(),
 	op: text('op', { enum: ['create', 'update', 'delete'] }).notNull(),
 	patch: text('patch', { mode: 'json' }).$type<Record<string, unknown>>(),
-	created_at: integer('created_at', { mode: 'timestamp_ms' })
+	created_at: text('created_at')
 		.notNull()
-		.$defaultFn(() => new Date()),
+		.$defaultFn(() => new Date().toISOString()),
 	synced: integer('synced', { mode: 'boolean' }).notNull().default(false),
 	in_flight: integer('in_flight', { mode: 'boolean' }).notNull().default(false),
 	base_version: integer('base_version').notNull().default(0)
@@ -66,7 +66,7 @@ export const user = sqliteTable('user', {
 		.primaryKey()
 		.$defaultFn(() => uuid()),
 	name: text('name').notNull(),
-	created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date())
+	created_at: text('created_at').$defaultFn(() => new Date().toISOString())
 });
 
 export const enum_resource_types = ['note'] as const;
@@ -93,12 +93,11 @@ export const resource_type = sqliteTable('resource_type', {
 
 	field_config: text('field_config', { mode: 'json' }).$type<ResourceFieldConfig[]>(),
 
-	created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
-	updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+	created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+	updated_at: text('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString())
 });
 export type ResourceType = typeof resource_type.$inferSelect;
 
@@ -112,12 +111,12 @@ export const media = sqliteTable('media', {
 	file_path: text('file_path').notNull(),
 	file_name: text('file_name').notNull(),
 	mime_type: text('mime_type').notNull(),
-	created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
-	updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+	created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+	updated_at: text('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString()),
+	deleted_at: text('deleted_at')
 });
 export type Media = typeof media.$inferSelect;
 
@@ -139,14 +138,14 @@ export const resource = sqliteTable(
 		content: text('content'),
 		url: text('url'),
 		image: text('image').references(() => media.id),
-		created_at: integer('created_at', { mode: 'timestamp_ms' })
+		created_at: text('created_at')
 			.notNull()
-			.$defaultFn(() => new Date()),
-		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString()),
+		updated_at: text('updated_at')
 			.notNull()
-			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: integer('deleted_at', { mode: 'timestamp_ms' }),
+			.$defaultFn(() => new Date().toISOString())
+			.$onUpdateFn(() => new Date().toISOString()),
+		deleted_at: text('deleted_at'),
 		version: integer('version').notNull().default(0)
 	},
 	(t) => [
@@ -167,12 +166,11 @@ export const relationship_type = sqliteTable('relationship_type', {
 	symmetric: integer('symmetric', { mode: 'boolean' }).notNull().default(false),
 	from_type: text('from_type').references(() => resource_type.id),
 	to_type: text('to_type').references(() => resource_type.id),
-	created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
-	updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+	created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+	updated_at: text('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString())
 });
 export type RelationshipType = typeof relationship_type.$inferSelect;
 
@@ -186,14 +184,13 @@ export const relationship = sqliteTable(
 			.notNull()
 			.references(() => space.id, { onDelete: 'cascade' }),
 		relationship_type: text('relationship_type').references(() => relationship_type.id),
-		from_resource: text('from_resource').references(() => resource.id),
-		to_resource: text('to_resource').references(() => resource.id),
-		created_at: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
-		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+		from_resource: text('from_resource').references(() => resource.id, { onDelete: 'cascade' }),
+		to_resource: text('to_resource').references(() => resource.id, { onDelete: 'cascade' }),
+		created_at: text('created_at').$defaultFn(() => new Date().toISOString()),
+		updated_at: text('updated_at')
 			.notNull()
-			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString())
+			.$onUpdateFn(() => new Date().toISOString())
 	},
 	(t) => [
 		index('rel_from_idx').on(t.from_resource),
@@ -213,14 +210,14 @@ export const space = sqliteTable('space', {
 	default_resource_type: text('default_resource_type')
 		.notNull()
 		.references(() => resource_type.id),
-	created_at: integer('created_at', { mode: 'timestamp_ms' })
+	created_by: text('created_by').notNull(),
+	created_at: text('created_at')
 		.notNull()
-		.$defaultFn(() => new Date()),
-	updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+		.$defaultFn(() => new Date().toISOString()),
+	updated_at: text('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date())
-		.$onUpdateFn(() => new Date()),
-	deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString())
 });
 export type Space = typeof space.$inferSelect;
 export type SpaceInsert = typeof space.$inferInsert;
@@ -241,14 +238,13 @@ export const space_user = sqliteTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
 		role: text('role', { enum: enum_space_roles }).notNull().default('viewer'),
-		created_at: integer('created_at', { mode: 'timestamp_ms' })
+		created_at: text('created_at')
 			.notNull()
-			.$defaultFn(() => new Date()),
-		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString()),
+		updated_at: text('updated_at')
 			.notNull()
-			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString())
+			.$onUpdateFn(() => new Date().toISOString())
 	},
 	(t) => [
 		unique('space_user_space_user_uq').on(t.space_id, t.user_id),
@@ -266,18 +262,17 @@ export const space_resource_type = sqliteTable(
 			.$defaultFn(() => uuid()),
 		space_id: text('space_id')
 			.notNull()
-			.references(() => space.id),
+			.references(() => space.id, { onDelete: 'cascade' }),
 		resource_type_id: text('resource_type_id')
 			.notNull()
 			.references(() => resource_type.id),
-		created_at: integer('created_at', { mode: 'timestamp_ms' })
+		created_at: text('created_at')
 			.notNull()
-			.$defaultFn(() => new Date()),
-		updated_at: integer('updated_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString()),
+		updated_at: text('updated_at')
 			.notNull()
-			.$defaultFn(() => new Date())
-			.$onUpdateFn(() => new Date()),
-		deleted_at: integer('deleted_at', { mode: 'timestamp_ms' })
+			.$defaultFn(() => new Date().toISOString())
+			.$onUpdateFn(() => new Date().toISOString())
 	},
 	(t) => [
 		unique('space_recource_type_uq').on(t.space_id, t.resource_type_id),
@@ -289,7 +284,13 @@ export type SpaceResourceType = typeof space_resource_type.$inferSelect;
 export const drizzle_schema = {
 	user,
 	space,
-	resource
+	space_user,
+	space_resource_type,
+	resource_type,
+	resource,
+	media,
+	relationship_type,
+	relationship
 };
 
 export const ps_schema = new DrizzleAppSchema(drizzle_schema);

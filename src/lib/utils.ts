@@ -13,12 +13,7 @@ export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
 
 export function coerce(patch: Record<string, unknown> | null): Record<string, unknown> {
-	if (!patch) return {};
-	const out = { ...patch };
-	for (const field of ['created_at', 'updated_at', 'deleted_at']) {
-		if (typeof out[field] === 'string') out[field] = new Date(out[field] as string);
-	}
-	return out;
+	return patch ? { ...patch } : {};
 }
 
 export function generateRandomNoteTitle() {
