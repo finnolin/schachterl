@@ -682,13 +682,13 @@ If using tombstones, ensure the sync streams include them long enough for client
 1. ~~Expand and secure `powersync/sync-config.yaml`.~~ Done locally; validation/deployment remains.
 2. ~~Define the complete PowerSync schema.~~ Done.
 3. ~~Define the complete Drizzle schema mapping.~~ Done.
-4. Add Better Auth → PowerSync credential issuance.
+4. [x] Add Better Auth → PowerSync credential issuance.
 5. Add the PowerSync upload endpoint.
 6. ~~Replace `DatabaseService` with a PowerSync database service.~~ Done locally; sync connection remains.
 7. Update `AppContext` boot/auth/logout lifecycle.
 8. Convert repositories to direct PowerSync writes.
 9. Add Svelte reactive PowerSync query helpers.
-10. Implement the web connector and native Tauri connector.
+10. [x] Implement the web connector and native Tauri connector.
 11. Validate/deploy the service and test initial download sync.
 12. Test offline writes, uploads, reconnect behavior, and user switching.
 13. Remove old sync endpoints and SSE.
@@ -711,11 +711,11 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ## Authentication
 
-- [ ] Better Auth session exists before PowerSync connects.
-- [ ] PowerSync token has the correct `sub`.
-- [ ] PowerSync token audience matches service config.
-- [ ] Token expiry is short-lived.
-- [ ] Logout clears/disconnects local PowerSync data.
+- [x] Better Auth session exists before PowerSync connects.
+- [x] PowerSync token has the correct `sub`.
+- [x] PowerSync token audience matches service config.
+- [x] Token expiry is short-lived.
+- [x] Logout clears/disconnects local PowerSync data.
 - [ ] User switching cannot expose previous user data.
 
 ## Download sync
