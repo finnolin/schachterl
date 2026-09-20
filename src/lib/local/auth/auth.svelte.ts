@@ -9,8 +9,8 @@ import { store } from '#lib/local/app/store.svelte.js';
 import log from '#lib/logger.svelte.js';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { server_connection } from '../sync/poke-client.svelte';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { PowerSyncService } from '../sync/powersync-service.js';
+import { power_sync_db } from '#lib/local/db/index.js';
 
 //type ClientSession = NonNullable<Awaited<ReturnType<AuthClient['getSession']>>['data']>;
 function makeClient(base_url: string, validateSession: () => Promise<void>) {
@@ -65,6 +65,7 @@ class Auth {
 	client: AuthClient | null = null;
 	user: User | null = null;
 	role: 'admin' | 'user' = $state('user');
+	private powersync: PowerSyncService | null = null;
 
 	async initialize() {
 		if (!store.server_url) {
@@ -119,14 +120,28 @@ class Auth {
 			await store.setProperty('remote_user_id', authed_id);
 		}
 
-		if (db.user_id !== authed_id) {
-			// if (isTauri()) {
-			// 	//await relaunch();
-			// }
-			await db.initialize(); // initialize() gets the user_id from store
+		const database_changed = db.user_id !== authed_id;
+		if (database_changed) {
+			await this.powersync?.disconnect();
+			this.powersync = null;
+			await db.initialize();
 		}
-		log.auth.debug('User + db OK');
-		await server_connection.connect();
+
+		const active_database = power_sync_db;
+		if (!active_database) {
+			throw new Error('PowerSync database was not initialized');
+		}
+
+		if (!this.powersync) {
+			this.powersync = new PowerSyncService(
+				active_database,
+				store.server_url || PUBLIC_BASE_URL!,
+				async () => (await store.getProperty('bearer_token')) ?? ''
+			);
+		}
+
+		log.auth.debug('User + database OK');
+		await this.powersync.connect();
 	}
 
 	isAdmin(): boolean {
@@ -137,7 +152,8 @@ class Auth {
 
 	async logout() {
 		log.auth.info('Logging out...');
-		server_connection.disconnect();
+		await this.powersync?.disconnect();
+		this.powersync = null;
 		const result = await this.client?.signOut();
 		if (result?.data?.success) {
 			log.auth.debug('Logout successful.');
