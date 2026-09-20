@@ -34,7 +34,7 @@ const power_sync_schema = new DrizzleAppSchema({
 export type LocalDrizzleDb = PowerSyncSQLiteDatabase<typeof relations>;
 export type LocalPowerSyncDb = PowerSyncDatabase | PowerSyncTauriDatabase;
 
-export let powerSyncDb: LocalPowerSyncDb | null = null;
+export let power_sync_db: LocalPowerSyncDb | null = null;
 export let db: LocalDrizzleDb | null = null;
 
 function getDatabaseFilename(user_id: string) {
@@ -74,12 +74,12 @@ export class DatabaseService {
 			return;
 		}
 
-		if (powerSyncDb && this.user_id !== user_id) {
+		if (power_sync_db && this.user_id !== user_id) {
 			log.db.info('Switching PowerSync databases for a different user.');
 			await this.destroy();
 		}
 
-		if (powerSyncDb && this.user_id === user_id && this.drizzle_db) {
+		if (power_sync_db && this.user_id === user_id && this.drizzle_db) {
 			return this.drizzle_db;
 		}
 
@@ -87,12 +87,12 @@ export class DatabaseService {
 		this.db_string = `sqlite:${getDatabaseFilename(user_id)}`;
 		log.db.info('Opening PowerSync database:', this.db_string);
 
-		powerSyncDb = createPowerSyncDatabase(user_id);
-		await powerSyncDb.init();
+		power_sync_db = createPowerSyncDatabase(user_id);
+		await power_sync_db.init();
 
 		// The Drizzle wrapper is queryable immediately after init(). Sync
 		// connection/authentication is intentionally managed separately.
-		db = wrapPowerSyncWithDrizzle(powerSyncDb, { schema: relations });
+		db = wrapPowerSyncWithDrizzle(power_sync_db, { schema: relations });
 		this.drizzle_db = db;
 
 		const { app_context } = await import('../app/app-context.svelte.js');
@@ -113,13 +113,13 @@ export class DatabaseService {
 	}
 
 	async destroy() {
-		if (powerSyncDb) {
+		if (power_sync_db) {
 			log.db.info('Closing PowerSync database:', this.db_string ?? 'unknown');
-			await powerSyncDb.disconnect();
-			await powerSyncDb.close();
+			await power_sync_db.disconnect();
+			await power_sync_db.close();
 		}
 
-		powerSyncDb = null;
+		power_sync_db = null;
 		db = null;
 		this.drizzle_db = null;
 		this.user_id = undefined;

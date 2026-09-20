@@ -84,6 +84,14 @@ Guidelines:
 - Correct folder spelling: `components` (not `comonents`).
 - Migration in progress: `components/elements/*` is legacy — those belong in `features/*` (e.g. `space-selector`, `resource-breadcumbs`, `user-popover`), and `layout/feed/resource-card.svelte` belongs in `features/resource/`.
 
+## Database migration policy (non-negotiable)
+
+- Do not create, delete, edit, rename, regenerate, or restore any migration files or migration metadata.
+- Do not run `npm run db:gen:local`, `npm run db:gen:server`, `npm run db:mig:server`, `drizzle-kit generate`, or `drizzle-kit migrate`.
+- Migration history has intentionally been removed from this repository as part of the PowerSync migration.
+- Schema changes must be made only in the active schema definitions and PowerSync configuration unless the operator explicitly authorizes migration-file work in the current request.
+- If a task appears to require a migration, stop and ask the operator instead of creating or modifying one.
+
 ## Conventions
 
 - File names: `kebab-case.svelte`, reactive modules: `*.svelte.ts`.
@@ -99,9 +107,6 @@ Guidelines:
 npm run dev              # web dev server (5173)
 npm run dev:tauri        # tauri dev frontend (5174)
 npm run check            # svelte-check
-npm run db:gen:local     # generate local sqlite migrations
-npm run db:gen:server    # generate server pg migrations
-npm run db:mig:server    # apply server pg migrations
 npm run db:studio:server # drizzle studio (server db)
 ```
 

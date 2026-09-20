@@ -9,5 +9,9 @@ export const variables = defineEnvVars({
 	DB_HOST: { schema: (input) => input ?? '' },
 	DB_PORT: { schema: (input) => input ?? '' },
 	DB_SSL_CA: { schema: (input) => input ?? '' },
-	PUBLIC_BASE_URL: { public: true, schema: (input) => input ?? '' }
+	PUBLIC_BASE_URL: { public: true, schema: (input) => input ?? '' },
+	PUBLIC_POWERSYNC_URL: { public: true, schema: (input) => input ?? '' },
+	POWERSYNC_AUDIENCE: { schema: (input) => input ?? '' },
+	POWERSYNC_JWT_KID: { schema: (input) => input ?? '' },
+	POWERSYNC_JWT_PRIVATE_KEY: { schema: (input) => input ?? '' }
 });
