@@ -1,7 +1,6 @@
 import { app_context as app } from '../app/app-context.svelte';
 import { store } from '../app/store.svelte';
 import type { SpaceInsert, Space } from '../db/schema';
-import { notify } from '../utils/invalidation';
 import { eq } from 'drizzle-orm';
 import { v7 as uuid } from 'uuid';
 import * as IDs from '../utils/ids';
@@ -38,7 +37,6 @@ export class Spaces {
 			})
 			.returning();
 
-		notify('spaces');
 		return row;
 	}
 	async updateSpace(
@@ -46,9 +44,6 @@ export class Spaces {
 		values: Partial<Pick<Space, 'name' | 'default_resource_type' | 'icon'>>
 	) {
 		await app.db.update(app.schema.space).set(values).where(eq(app.schema.space.id, id));
-
-		notify('spaces', 'space:' + id);
-		console.log('updated space');
 	}
 
 	async deleteSpace(id: string) {
@@ -57,11 +52,10 @@ export class Spaces {
 			.where(eq(app.schema.space.id, id))
 			.returning();
 
-		notify('spaces');
 		return row;
 	}
-	async getSpaces() {
-		return await app.db.select().from(app.schema.space);
+	getSpaces() {
+		return app.db.select().from(app.schema.space);
 	}
 
 	async getSpaceById(id: string) {
@@ -108,6 +102,19 @@ export class Spaces {
 			.where(eq(app.schema.space_user.space_id, id));
 
 		return { ...space, resource_types: types, space_users, users: users };
+	}
+
+	async getSpaceByIdQuery(id: string) {
+		return app.db
+			.select({
+				// pull the global type fields, not the junction row
+				id: app.schema.user.id,
+				name: app.schema.user.name,
+				role: app.schema.space_user.role
+			})
+			.from(app.schema.space_user)
+			.innerJoin(app.schema.user, eq(app.schema.space_user.user_id, app.schema.user.id))
+			.where(eq(app.schema.space_user.space_id, id));
 	}
 
 	async setDefaultResourceType(space_id: string, resource_type_id: string) {

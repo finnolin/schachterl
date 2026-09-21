@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import SpaceCard from '#lib/components/features/space/space-card.svelte';
-	import { app_context } from '#lib/local/app/app-context.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
+	import { Spaces } from '#lib/local/repositories/Spaces.js';
 
-	const spaces_query = $derived(app_context.spaces_query);
-	const spaces = $derived(spaces_query?.current ?? []);
+	const spaces_query = new LiveQuery(() => new Spaces().getSpaces());
+	const spaces = $derived(spaces_query.data ?? []);
 	const loading = $derived(spaces_query?.loading ?? true);
 </script>
 

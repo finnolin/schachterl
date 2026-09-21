@@ -1,8 +1,8 @@
 import { type Resource } from '#lib/local/db/schema.js';
 import { Resources, compareResources } from '#lib/local/repositories/Resources.js';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import { subscribeToKeys } from '#lib/local/utils/invalidation.js';
 import { app_context } from '#lib/local/app/app-context.svelte.js';
+import { LiveQuery } from '#lib/local/db/live.svelte.js';
 
 /** Single source of truth for the resource columns the tree keeps in memory. */
 const TREE_ROW_KEYS = [
@@ -27,58 +27,36 @@ function treeRowFields() {
 	>;
 }
 
+/** The (unawaited) drizzle query for one space's tree rows. */
+function treeQuery(space_id: string) {
+	return new Resources().getResourcesBySpaceQuery(space_id, treeRowFields());
+}
+
 class TreeStore {
-	//rows = new SvelteMap<string, Resource>();
-	rows = new SvelteMap<string, TreeRow>();
-	space_id = $state<string | null>(null);
-	open_nodes = new SvelteSet();
-	loading = $state(false);
-	#unsub: (() => void) | null = null;
+	/** Follows the focused space in app_context. No manual load() needed. */
+	space_id = $derived(app_context.current_space_id ?? null);
 
-	async load(space_id: string) {
-		this.#unsub?.();
-		this.open_nodes = new SvelteSet();
-		this.space_id = space_id;
-		await this.#refetch();
-		this.#unsub = subscribeToKeys(['resources', `resources:space:${space_id}`], () =>
-			this.#refetch()
-		);
-	}
+	/** Recreated (and thereby cleared) whenever the space changes. */
+	open_nodes = $derived.by(() => {
+		void this.space_id;
+		return new SvelteSet<string>();
+	});
 
-	async #refetch() {
-		if (!this.space_id) return;
-		this.loading = true;
-		const all = await new Resources().getResourcesBySpace(this.space_id, treeRowFields());
-		const seen = new SvelteSet<string>();
-		for (const r of all) {
-			this.rows.set(r.id, r);
-			seen.add(r.id);
+	/** Live query for the current space. Rebuilds on space or database change. */
+	#query = new LiveQuery(() => (this.space_id ? treeQuery(this.space_id) : null));
+
+	/** All live rows of the current space, keyed by id. */
+	rows = $derived.by(() => {
+		const map = new SvelteMap<string, TreeRow>();
+		for (const r of this.#query.data ?? []) {
+			if (!r.deleted_at) map.set(r.id, r);
 		}
-		for (const id of [...this.rows.keys()]) {
-			if (!seen.has(id)) this.rows.delete(id);
-		}
-		this.loading = false;
-	}
+		return map;
+	});
 
-	clear() {
-		this.#unsub?.();
-		this.#unsub = null;
-		this.rows.clear();
-		this.space_id = null;
-	}
+	loading = $derived(this.#query.loading);
 
-	upsert(row: TreeRow) {
-		if (this.space_id && row.space_id !== this.space_id) return;
-		if (row.deleted_at) {
-			this.rows.delete(row.id);
-			return;
-		}
-		this.rows.set(row.id, row);
-	}
-
-	remove(id: string) {
-		this.rows.delete(id);
-	}
+	error = $derived(this.#query.error);
 
 	wouldCreateCycle(moving_id: string, target_parent_id: string): boolean {
 		let current: string | null = target_parent_id;

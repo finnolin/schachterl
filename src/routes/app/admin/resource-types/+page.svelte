@@ -4,14 +4,12 @@
 	import Button from '#lib/components/ui/button/button.svelte';
 	import * as Item from '#lib/components/ui/item/index.js';
 	import Icon from '#lib/components/features/icons/icon.svelte';
-	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 	import { ResourcesTypes } from '#lib/local/repositories/ResourceTypes.js';
 	import AddResourceTypeDialog from '#lib/components/features/resource-type/add-resource-type-dialog.svelte';
 
-	const resource_types_query = new LiveQuery(['resource_types'], () =>
-		new ResourcesTypes().getResourceTypes()
-	);
-	const resource_types = $derived(resource_types_query.current ?? []);
+	const resource_types_query = new LiveQuery(() => new ResourcesTypes().getResourceTypes());
+	const resource_types = $derived(resource_types_query.data ?? []);
 	const loading = $derived(resource_types_query.loading);
 
 	let add_dialog_open = $state(false);

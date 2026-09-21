@@ -5,17 +5,11 @@ import { isTauri } from '@tauri-apps/api/core';
 import * as schema from '#lib/local/db/schema.js';
 import { store } from '#lib/local/app/store.svelte.js';
 import { auth } from '#lib/local/auth/auth.svelte.js';
-import { tree } from '#lib/components/features/tree/tree.svelte.js';
 import { Spaces } from '../repositories/Spaces';
 import { Resources } from '../repositories/Resources';
-import { LiveQuery } from '../utils/live-query.svelte';
-import type { Space, RelationshipType, ResourceType } from '#lib/local/db/schema.js';
-import { notify } from '../utils/invalidation';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { sidebar } from '#lib/components/layout/sidebar/sidebar_state.svelte.js';
-import { SvelteMap } from 'svelte/reactivity';
 
 type SpaceWithTypes = Awaited<ReturnType<Spaces['getSpaceById']>>;
 type Resource = Awaited<ReturnType<Resources['getResourceById']>>;
@@ -29,25 +23,8 @@ export class AppContext {
 	drizzle_db: LocalDrizzleDb | null = $state(null);
 	private drizzle_schema = schema;
 
-	// private space_cache = new SvelteMap<string, SpaceWithTypes>();
-	// private resource_cache = new SvelteMap<string, Resource>();
-
 	current_space: SpaceWithTypes | undefined = $state();
 	current_space_id: string | undefined = $state();
-	spaces_query: LiveQuery<Space[]> | null = $state(null);
-	resource_types_query: LiveQuery<ResourceType[]> | null = $state(null);
-
-	// * Live (reactive) version of `current_space`.
-	// Recreated whenever the focused space changes, refetched whenever one of
-	// its invalidation keys is notified.
-	space_query: LiveQuery<SpaceWithTypes> | null = $derived.by(() => {
-		const space_id = this.current_space_id;
-		if (!space_id) return null;
-		return new LiveQuery(['spaces', 'resource_types', `space:${space_id}`], () =>
-			new Spaces().getSpaceById(space_id)
-		);
-	});
-
 	loading_space: boolean = $state(false);
 
 	focus: Focus | undefined = $state();
@@ -96,10 +73,7 @@ export class AppContext {
 			await this.Database.initialize();
 			await auth.validateSession();
 		}
-		//await sidebar.initialize();
-
 		this.setBootStep(4, 'Ready.');
-		this.initQueries();
 
 		// e.g. returning from the server-selection page after choosing 'local'
 		if (page.url.pathname === resolve('settings/server')) {
@@ -108,12 +82,6 @@ export class AppContext {
 		if (page.url.pathname === resolve('/')) {
 			goto(resolve('/app'));
 		}
-	}
-
-	private initQueries() {
-		this.spaces_query ??= new LiveQuery(['spaces'], () => new Spaces().getSpaces());
-		notify('spaces'); // refetch now that db exists
-		// this.resource_types_query ??= new
 	}
 
 	async setServer(server_url: string) {
@@ -173,10 +141,6 @@ export class AppContext {
 	}
 
 	async setSpaceById(space_id: string) {
-		if (tree.space_id !== space_id) {
-			await tree.load(space_id);
-			console.log('tree load');
-		}
 		this.current_space_id = space_id;
 		const space = await new Spaces().getSpaceById(space_id);
 		this.current_space = space;
@@ -205,19 +169,6 @@ export class AppContext {
 
 	get space() {
 		return this.current_space;
-	}
-
-	// * Preferred read path in the UI: reactive, auto-refetching space.
-	get live_space() {
-		return this.space_query?.current;
-	}
-
-	get live_space_loading() {
-		return this.space_query?.loading ?? false;
-	}
-
-	get live_space_error() {
-		return this.space_query?.error;
 	}
 
 	get focused() {

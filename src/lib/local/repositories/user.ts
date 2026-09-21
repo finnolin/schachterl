@@ -8,8 +8,8 @@ export class Users {
 		const [user] = await this.db.insert(this.schema.user).values({ name: 'local' }).returning();
 	}
 
-	async getUsers() {
-		const users = await this.db.select().from(this.schema.user);
-		return users;
+	getUsers() {
+		const query = this.db.select().from(this.schema.user);
+		return query;
 	}
 }

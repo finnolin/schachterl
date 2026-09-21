@@ -3,7 +3,6 @@ import { PowerSyncDatabase } from '@powersync/web';
 import { PowerSyncTauriDatabase } from '@powersync/tauri-plugin';
 import type { LocalPowerSyncDb } from '#lib/local/db/index.js';
 import { WebPowerSyncConnector } from './powersync-connector.js';
-import { notify } from '#lib/local/utils/invalidation.js';
 import type { SyncStreamSubscription } from '@powersync/common';
 
 export type BetterAuthTokenProvider = () => Promise<string>;
@@ -42,26 +41,6 @@ export class PowerSyncService {
 		// Subscribe explicitly so web and Tauri use the same readiness and
 		// lifecycle path. The stream is not auto-subscribed in the service config.
 		this.user_data_subscription = await this.database.syncStream('user_data').subscribe();
-
-		// LiveQuery currently uses Drizzle for reads. Watch each domain table
-		// through PowerSync and invalidate those reads when local or remote data
-		// is applied. Separate simple queries are more portable across the web
-		// and native SQLite adapters than one query with nested aggregates.
-		for (const table of [
-			'user',
-			'space',
-			'space_user',
-			'space_resource_type',
-			'resource_type',
-			'resource',
-			'media',
-			'relationship_type',
-			'relationship'
-		]) {
-			this.database.watch(`SELECT id FROM ${table}`, [], {
-				onResult: () => notify('powersync')
-			});
-		}
 
 		this.connected = true;
 	}

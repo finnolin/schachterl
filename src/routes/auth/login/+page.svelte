@@ -35,7 +35,7 @@
 					//  localStorage.setItem('bearer_token', auth_token);
 					// }
 
-					goto(resolve('/'));
+					goto(resolve('/app'));
 				},
 				onError: (ctx) => {
 					// display the error message

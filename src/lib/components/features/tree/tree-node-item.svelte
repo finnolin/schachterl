@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from '#lib/components/ui/button/button.svelte';
-	import { tree, type TreeNode } from './tree.svelte.js';
+	import { tree, type TreeNode } from './resource-tree.svelte.js';
 	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	import { Resources } from '#lib/local/repositories/Resources.js';
 	import type { Snippet } from 'svelte';

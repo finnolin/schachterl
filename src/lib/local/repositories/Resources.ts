@@ -5,8 +5,7 @@ import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import type { SelectedFields } from 'drizzle-orm/sqlite-core/query-builders/select.types';
 
 import { generateKeyBetween, generateJitteredKeyBetween } from 'fractional-indexing-jittered';
-import { tree } from '#lib/components/features/tree/tree.svelte.js';
-import { notify } from '../utils/invalidation';
+import { tree } from '#lib/components/features/tree/resource-tree.svelte.js';
 
 type ResourceFilter = Partial<Pick<Resource, 'parent_id' | 'space_id'>>;
 
@@ -52,14 +51,12 @@ export class Resources {
 			sort_order: generateJitteredKeyBetween(last, null)
 		};
 		const [row] = await db.insert(this.schema.resource).values(insert).returning();
-		notify('resources', `resource.space_id:${values.space_id}`);
 		return row;
 	}
 
 	async updateResource(id: string, space_id: string, values: Partial<ResourceInsert>) {
 		const db = app.db;
 		await db.update(this.schema.resource).set(values).where(eq(this.schema.resource.id, id));
-		notify('resource', `resource.space_id:${space_id}`);
 	}
 
 	async deleteResource(id: string, space_id: string) {
@@ -69,6 +66,16 @@ export class Resources {
 	}
 
 	async getResourcesBySpace<
+		TFields extends ResourceSelectFields = ReturnType<Resources['getDefaultResourceBySpaceFields']>
+	>(space_id: string, fields?: TFields) {
+		const t = this.schema.resource;
+		const db = app.db;
+		const selected_fields =
+			fields ?? (this.getDefaultResourceBySpaceFields() as unknown as TFields);
+		return db.select(selected_fields).from(t).where(eq(t.space_id, space_id));
+	}
+
+	getResourcesBySpaceQuery<
 		TFields extends ResourceSelectFields = ReturnType<Resources['getDefaultResourceBySpaceFields']>
 	>(space_id: string, fields?: TFields) {
 		const t = this.schema.resource;
@@ -90,7 +97,7 @@ export class Resources {
 		return resource;
 	}
 
-	async getResources(options: ResourceQueryOptions = {}) {
+	getResources(options: ResourceQueryOptions = {}) {
 		const table = app.schema.resource;
 
 		const conditions: SQL[] = [isNull(table.deleted_at)];
@@ -115,7 +122,7 @@ export class Resources {
 		if (options.limit !== undefined) query = query.limit(options.limit);
 		if (options.offset !== undefined) query = query.offset(options.offset);
 
-		return await query;
+		return query;
 	}
 
 	async moveUp(id: string, parent_id: string | null, space_id: string) {

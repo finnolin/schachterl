@@ -1,5 +1,4 @@
 import { app_context as app } from '../app/app-context.svelte';
-import { notify } from '../utils/invalidation';
 import {
 	space,
 	type ResourceFieldConfig,
@@ -24,13 +23,13 @@ type CreateResourceTypeInput = BaseCreateResourceTypeInput & {
 export class ResourcesTypes {
 	private schema = app.schema;
 
-	async getResourceTypes() {
-		const types = await app.db.select().from(this.schema.resource_type);
+	getResourceTypes() {
+		const types = app.db.select().from(this.schema.resource_type);
 		return types;
 	}
 
-	async getSpaceResourceTypes(space_id: string) {
-		const resource_types = await app.db
+	getSpaceResourceTypes(space_id: string) {
+		const resource_types = app.db
 			.select({
 				id: this.schema.resource_type.id,
 				singular: this.schema.resource_type.singular,
@@ -64,7 +63,6 @@ export class ResourcesTypes {
 			})
 			.returning();
 
-		notify('resource_types', 'spaces');
 		return resource_type;
 	}
 
@@ -91,7 +89,6 @@ export class ResourcesTypes {
 			.where(eq(this.schema.resource_type.id, id))
 			.returning();
 
-		notify('resource_types');
 		return updated;
 	}
 
@@ -102,7 +99,6 @@ export class ResourcesTypes {
 			.values({ space_id, resource_type_id })
 			.returning();
 
-		notify('spaces', 'resource_types');
 		return [space_resource_type] as const;
 	}
 
@@ -132,36 +128,28 @@ export class ResourcesTypes {
 		await db
 			.delete(this.schema.space_resource_type)
 			.where(eq(this.schema.space_resource_type.id, space_resource_type.id));
-
-		notify(`space:${space_id}`);
 	}
 
-	async getResourceTypeById(id: string) {
+	getResourceTypeById(id: string) {
 		const db = app.db;
-		const [resource_type] = await db
+		const query = db
 			.select()
 			.from(this.schema.resource_type)
 			.where(eq(this.schema.resource_type.id, id))
 			.limit(1);
-		return resource_type;
+		return query;
 	}
 
-	async getAvailableResourceTypesForSpace(space_id: string) {
+	getAvailableResourceTypesForSpace(space_id: string) {
 		const db = app.db;
-		const attached = await db
-			.select({ resource_type_id: this.schema.space_resource_type.resource_type_id })
-			.from(this.schema.space_resource_type)
-			.where(eq(this.schema.space_resource_type.space_id, space_id));
+		const srt = this.schema.space_resource_type;
+		const rt = this.schema.resource_type;
 
-		const attached_ids = attached.map((row) => row.resource_type_id);
+		const attached = db
+			.select({ id: srt.resource_type_id })
+			.from(srt)
+			.where(eq(srt.space_id, space_id));
 
-		if (attached_ids.length === 0) {
-			return db.select().from(this.schema.resource_type);
-		}
-
-		return db
-			.select()
-			.from(this.schema.resource_type)
-			.where(notInArray(this.schema.resource_type.id, attached_ids));
+		return db.select().from(rt).where(notInArray(rt.id, attached));
 	}
 }

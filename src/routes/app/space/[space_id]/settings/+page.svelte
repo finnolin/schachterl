@@ -7,7 +7,7 @@
 	import Button from '#lib/components/ui/button/button.svelte';
 	import * as Item from '#lib/components/ui/item/index.js';
 	import Icon from '#lib/components/features/icons/icon.svelte';
-	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 	import EditResourceTypeDialog, {
 		type EditableResourceType
 	} from '#lib/components/features/resource-type/edit-resource-type-dialog.svelte';
@@ -23,30 +23,24 @@
 	}
 
 	// live_space auto-refetches on notify(); current_space is the fallback while booting
-	let space = $derived(app_context.live_space);
+	let space = $derived(app_context.current_space);
 	let icon = $derived(space?.icon);
 
-	const space_resource_type_query = $derived.by(() => {
-		const space_id = app_context.current_space_id;
-		if (!space_id) return null;
-		return new LiveQuery(['resource_types', `space:${space_id}`], () =>
-			new ResourcesTypes().getSpaceResourceTypes(space_id)
-		);
-	});
-	const space_resource_types = $derived(space_resource_type_query?.current ?? []);
+	const space_resource_type_query = new LiveQuery(() =>
+		space?.id ? new ResourcesTypes().getSpaceResourceTypes(space.id) : null
+	);
+
+	const space_resource_types = $derived(space_resource_type_query?.data ?? []);
 
 	let current_space_user = $derived(space?.space_users.find((su) => su.user_id === auth.user?.id));
 	let space_user_role: EnumSpaceRole | null = $derived(current_space_user?.role ?? null);
 	let can_edit = $derived(space_user_role === 'owner' || space_user_role === 'editor');
 
-	const available_resource_type_query = $derived.by(() => {
-		const space_id = app_context.current_space_id;
-		if (!space_id) return null;
-		return new LiveQuery(['resource_types', `space:${space_id}`], () =>
-			new ResourcesTypes().getAvailableResourceTypesForSpace(space_id)
-		);
-	});
-	const available_resource_types = $derived(available_resource_type_query?.current ?? []);
+	const available_resource_type_query = new LiveQuery(() =>
+		space?.id ? new ResourcesTypes().getSpaceResourceTypes(space.id) : null
+	);
+
+	const available_resource_types = $derived(available_resource_type_query.data ?? []);
 
 	let editing_resource_type = $state<EditableResourceType | null>(null);
 	let edit_dialog_open = $state(false);
@@ -169,7 +163,6 @@
 					</Popover.Root>
 				</Card.Footer>
 			</Card.Root>
-
 		</div>
 	</div>
 

@@ -453,7 +453,7 @@ Use `disconnectAndClear()` when the user explicitly wants local data removed or 
 
 ## Phase 6 — Rewrite AppContext boot flow
 
-**Status: not started.** The database type and local initialization path were updated, but authentication-driven PowerSync connection and first-sync gating are still pending.
+**Status: complete.** The app opens the per-user PowerSync database, resolves Better Auth, starts the platform-specific PowerSync connection, and initializes the UI without blocking on first sync. Local data is rendered immediately and remote data arrives in the background.
 
 Current boot flow:
 
@@ -496,7 +496,7 @@ A truly unauthenticated local-only mode would need a separate policy because Pow
 
 ## Phase 7 — Rewrite repositories
 
-**Status: not started.** Query code remains compatible through the Drizzle wrapper, but repository writes still record custom changes.
+**Status: complete for the active repositories.** Repository writes now go directly through the PowerSync-backed Drizzle database. The deprecated `Changes.recordChange()` calls and client change-log repository have been removed.
 
 Most query code can remain conceptually similar if the Drizzle wrapper is retained.
 
@@ -543,39 +543,27 @@ Use transactions for:
 
 ## Phase 8 — Replace manual reactivity
 
-**Status: not started.**
+**Status: complete for the current UI.** The old invalidation-key `LiveQuery` and `invalidation.ts` modules were removed. The replacement in `src/lib/local/db/live.svelte.ts` compiles Drizzle queries with `toCompilableQuery()` and registers PowerSync table-aware change watchers through `onChange()`.
 
 Current reactivity:
 
 ```text
-write
-→ notify('resources')
-→ LiveQuery.refetch()
+Drizzle query
+→ PowerSync resolves referenced tables
+→ PowerSync onChange watcher
+→ query re-executes
+→ Svelte state updates
 ```
 
-Eventually replace this with PowerSync-backed query watching.
+The query helper supports initial execution, local writes, remote changes, reactive query rebuilding, and abort-based watcher cleanup.
 
-Files to replace or reduce:
-
-- `src/lib/local/utils/live-query.svelte.ts`
-- `src/lib/local/utils/invalidation.ts`
-- `src/lib/local/repositories/Changes.ts`
-
-Possible staged approach:
-
-1. Keep `LiveQuery` temporarily.
-2. Make it subscribe to PowerSync query/watch notifications.
-3. Remove manual invalidation calls progressively.
-4. Centralize watched queries around PowerSync.
-5. Dispose listeners when components/effects stop reading them.
-
-Do not use a separate raw SQLite connection for watches. Writes outside PowerSync bypass its change tracking and reactivity.
+Do not use a separate raw SQLite connection for watches. All reads and writes remain backed by the active PowerSync database.
 
 ---
 
 ## Phase 9 — Remove the old sync layer
 
-**Status: not started.** Complete this only after PowerSync upload/download and the vertical slice are verified.
+**Status: complete.** PowerSync upload/download and the main web/Tauri UI vertical slice were verified before removing the old synchronization implementation.
 
 Once PowerSync upload/download works, remove or archive:
 
@@ -599,13 +587,13 @@ Remove:
 - `synced` and `in_flight` processing
 - Manual remote change application
 
-The server `change` table may remain for audit/history, but it should no longer be the client synchronization mechanism unless intentionally retained for another purpose.
+The active server and local schemas no longer declare the legacy `change` table or enum. Existing migration files were intentionally left untouched under the repository migration policy; existing databases may retain the physical table until a separately authorized database migration is planned.
 
 ---
 
 ## Phase 10 — Remove obsolete dependencies
 
-**Status: partially complete.** Migration history has been removed. Dependency and legacy sync cleanup remain.
+**Status: pending.** Legacy source code and active schema declarations are removed, but obsolete SQL/SQLocal dependencies and related compatibility cleanup remain.
 
 After the new path works:
 
@@ -638,13 +626,13 @@ Verify whether the installed version of `@powersync/web` requires `@journeyapps/
 
 # Important discovered issues
 
-## PowerSync synchronization is not connected yet
+## PowerSync synchronization
 
-The local PowerSync database opens through the new lifecycle, but the web connector, Better Auth credential endpoint, upload endpoint, PowerSync service auth, and native Tauri connector are not implemented.
+The web and Tauri clients connect to the configured PowerSync service, upload through the authenticated backend endpoint, and receive membership-scoped Sync Stream data. The active UI has been verified on both platforms.
 
-## Legacy sync is still active
+## Legacy sync
 
-Repository writes still call `Changes.recordChange()`, and the old REST/SSE sync path remains. `app_meta` and `change` are therefore retained temporarily as local-only tables. They should be removed only after PowerSync upload/download is verified.
+The client/server legacy REST, SSE, poke, cursor, and change-log implementation has been removed. The active schemas no longer declare `app_meta` or `change`.
 
 ## Tauri synchronization requires Rust integration
 
@@ -679,21 +667,21 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 # Recommended implementation order
 
-1. ~~Expand and secure `powersync/sync-config.yaml`.~~ Done locally; validation/deployment remains.
+1. ~~Expand and secure `powersync/sync-config.yaml`.~~ Done locally; deployment validation remains.
 2. ~~Define the complete PowerSync schema.~~ Done.
 3. ~~Define the complete Drizzle schema mapping.~~ Done.
 4. [x] Add Better Auth → PowerSync credential issuance.
-5. Add the PowerSync upload endpoint.
-6. ~~Replace `DatabaseService` with a PowerSync database service.~~ Done locally; sync connection remains.
-7. Update `AppContext` boot/auth/logout lifecycle.
-8. Convert repositories to direct PowerSync writes.
-9. Add Svelte reactive PowerSync query helpers.
+5. [x] Add the authenticated PowerSync upload endpoint.
+6. ~~Replace `DatabaseService` with a PowerSync database service.~~ Done.
+7. ~~Update `AppContext` boot/auth/logout lifecycle.~~ Done.
+8. ~~Convert repositories to direct PowerSync writes.~~ Done.
+9. ~~Add Drizzle-aware PowerSync query watchers.~~ Done.
 10. [x] Implement the web connector and native Tauri connector.
-11. Validate/deploy the service and test initial download sync.
-12. Test offline writes, uploads, reconnect behavior, and user switching.
-13. Remove old sync endpoints and SSE.
-14. Remove Tauri SQL/SQLocal dependencies.
-15. ~~Remove obsolete migration history.~~ Done. Remove `app_meta` and the client change-log code after the old sync path is retired.
+11. Validate/deploy the service in each target environment.
+12. Test offline writes, uploads, reconnect behavior, deletes, and user switching.
+13. ~~Remove old sync endpoints, SSE, poke, and client change-log code.~~ Done.
+14. Remove Tauri SQL/SQLocal dependencies and remaining obsolete compatibility configuration.
+15. ~~Remove active legacy schema declarations.~~ Done. Migration files remain unchanged by policy.
 
 ---
 
@@ -740,39 +728,27 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ## Reactivity
 
-- [ ] Remote changes update the UI without SSE.
-- [ ] Local writes update the UI immediately.
-- [ ] Manual `notify()` calls are no longer required for domain tables.
-- [ ] Query subscriptions are disposed correctly.
+- [x] Remote changes update the UI without SSE.
+- [x] Local writes update the UI immediately.
+- [x] Manual `notify()` calls are no longer required for domain tables.
+- [x] Query watchers use PowerSync table dependencies and abort cleanup.
 
 ---
 
 # Recommended next coding slice
 
-The local database slice is complete. The next reversible vertical slice is the backend/connector path:
+The initial PowerSync migration path is complete and the legacy sync layer has been removed. The next work should focus on hardening:
 
-1. Add the Better Auth → PowerSync credentials endpoint.
-2. Add the authenticated PowerSync upload endpoint.
-3. Implement the web connector.
-4. Implement the native Tauri Rust connector.
-5. Validate `space` + `resource` creation, upload, remote download, and UI refresh.
-6. Only then remove repository `Changes.recordChange()` calls and the old sync layer.
+1. Validate the service configuration in each deployment environment.
+2. Test offline writes, reconnects, retries, user switching, and local-data isolation.
+3. Refine upload validation/conflict handling so permanent validation failures cannot block the upload queue.
+4. Remove obsolete SQL/SQLocal dependencies and unused compatibility configuration.
+5. Decide whether a separately authorized database migration is needed to drop legacy physical tables from existing installations.
 
-This keeps authentication, uploads, native sync, and old-sync cleanup separable.
+Keep the Drizzle-aware PowerSync query helper as the standard read path for new UI code.
 
 ---
 
 ## Next session starting point
 
-Start by reading:
-
-- `POWERSYNC_MIGRATION_PLAN.md`
-- `AGENTS.md`
-- `.agents/skills/powersync/SKILL.md`
-- `.agents/skills/powersync/AGENTS.md`
-- `src/lib/server/db/schema.ts`
-- `src/lib/local/db/schema.ts`
-- `src/lib/local/db/index.ts`
-- `powersync/sync-config.yaml`
-
-Then inspect the current package versions and decide whether to implement the first vertical slice or first complete the schema/sync-stream design.
+Start with the hardening checklist above. In particular, validate service deployment configuration, exercise offline/reconnect/user-switching scenarios, and review whether obsolete SQL/SQLocal dependencies can be removed safely. Do not edit migration files without explicit authorization.

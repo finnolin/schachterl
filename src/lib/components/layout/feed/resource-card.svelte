@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Item from '#lib/components/ui/item/index.js';
-	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 	import { Resources } from '#lib/local/repositories/Resources.js';
 	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
 	import { generateRandomNoteTitle } from '#lib/utils.js';
@@ -13,15 +13,15 @@
 	type SpaceWithTypes = NonNullable<Awaited<ReturnType<Spaces['getSpaceById']>>>;
 	let { space }: { space: SpaceWithTypes } = $props();
 
-	const resources_query = $derived(
-		new LiveQuery(['resources', `space:${space.id}`], () =>
-			new Resources().getResources({
-				filter: { space_id: space.id },
-				sort: { by: 'updated_at', dir: 'desc' }
-			})
-		)
+	const resources_query = new LiveQuery(() =>
+		new Resources().getResources({
+			filter: { space_id: space.id },
+			sort: { by: 'updated_at', dir: 'desc' }
+		})
 	);
-	const resources = $derived(resources_query.current ?? []);
+
+	const resources = $derived(resources_query.data ?? []);
+
 	const resource_type_icon_by_id = $derived(
 		new Map(
 			(space.resource_types ?? []).map((resource_type) => [
@@ -96,7 +96,9 @@
 				</Item.Header>
 				<Item.Content>
 					<Item.Title>
-						{@const ResourceIcon = resource.type ? resource_type_icon_by_id.get(resource.type) : null}
+						{@const ResourceIcon = resource.type
+							? resource_type_icon_by_id.get(resource.type)
+							: null}
 						{#if ResourceIcon}
 							<ResourceIcon class="size-4 shrink-0" />
 						{:else}

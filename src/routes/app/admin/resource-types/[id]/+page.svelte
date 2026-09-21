@@ -11,17 +11,17 @@
 	import IconPicker from '#lib/components/features/icons/icon-picker.svelte';
 	import FieldsEditor from '#lib/components/features/resource-type/resource-type-fields-editor.svelte';
 	import { normalizeFieldConfig } from '#lib/components/features/resource-type/resource-type-fields.js';
-	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 	import { ResourcesTypes } from '#lib/local/repositories/ResourceTypes.js';
 	import type { ResourceFieldConfig } from '#lib/local/db/schema.js';
 
 	const id = $derived(page.params.id);
 
-	const resource_type_query = $derived.by(() => {
-		if (!id) return null;
-		return new LiveQuery(['resource_types'], () => new ResourcesTypes().getResourceTypeById(id));
-	});
-	const resource_type = $derived(resource_type_query?.current ?? null);
+	const resource_type_query = new LiveQuery(() =>
+		id ? new ResourcesTypes().getResourceTypeById(id) : null
+	);
+
+	const resource_type = $derived(resource_type_query.data?.[0]);
 
 	let singular = $derived(resource_type?.singular ?? '');
 	let plural = $derived(resource_type?.plural ?? '');

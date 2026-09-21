@@ -13,10 +13,12 @@
 	import { resolve } from '$app/paths';
 	import { NOTE_TYPE_ID } from '#lib/local/utils/ids.js';
 	import { app_context as app } from '#lib/local/app/app-context.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 
 	let { class: className, ...rest_props }: WithElementRef<HTMLBaseAttributes> = $props();
 
-	const spaces = $derived(app.spaces_query?.current ?? []);
+	const spaces_query = new LiveQuery(() => new Spaces().getSpaces());
+	const spaces = $derived(spaces_query.data ?? []);
 
 	let open = $state(false);
 

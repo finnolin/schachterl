@@ -1,10 +1,10 @@
 <script lang="ts">
 	import * as Card from '#lib/components/ui/card/index.js';
-	import { LiveQuery } from '#lib/local/utils/live-query.svelte.js';
+	import { LiveQuery } from '#lib/local/db/live.svelte.js';
 	import { Users } from '#lib/local/repositories/user.js';
 
-	const users_query = new LiveQuery(['users'], () => new Users().getUsers());
-	const users = $derived(users_query.current ?? []);
+	const users_query = new LiveQuery(() => new Users().getUsers());
+	const users = $derived(users_query.data ?? []);
 	const loading = $derived(users_query.loading);
 </script>
 

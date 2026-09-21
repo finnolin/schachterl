@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, schema, type ServerTx } from '#lib/server/db/index.js';
