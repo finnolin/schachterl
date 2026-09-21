@@ -1,7 +1,6 @@
 import { app_context as app } from '../app/app-context.svelte';
 import { store } from '../app/store.svelte';
 import type { SpaceInsert, Space } from '../db/schema';
-import { Changes } from './Changes';
 import { notify } from '../utils/invalidation';
 import { eq } from 'drizzle-orm';
 import { v7 as uuid } from 'uuid';
@@ -20,7 +19,7 @@ export class Spaces {
 			.values({ ...space, created_by: user_id })
 			.returning();
 
-		const [membership] = await db
+		await db
 			.insert(schema.space_user)
 			.values({
 				id: uuid(),
@@ -30,7 +29,7 @@ export class Spaces {
 			})
 			.returning();
 
-		const [resource_type] = await db
+		await db
 			.insert(schema.space_resource_type)
 			.values({
 				id: uuid(),
@@ -38,25 +37,6 @@ export class Spaces {
 				resource_type_id: IDs.NOTE_TYPE_ID
 			})
 			.returning();
-
-		await new Changes().recordChange({
-			entity_id: row.id,
-			entity_type: 'space',
-			op: 'create',
-			patch: row
-		});
-		await new Changes().recordChange({
-			entity_id: membership.id,
-			entity_type: 'space_user',
-			op: 'create',
-			patch: membership
-		});
-		await new Changes().recordChange({
-			entity_id: resource_type.id,
-			entity_type: 'space_resource_type',
-			op: 'create',
-			patch: resource_type
-		});
 
 		notify('spaces');
 		return row;
@@ -66,13 +46,6 @@ export class Spaces {
 		values: Partial<Pick<Space, 'name' | 'default_resource_type' | 'icon'>>
 	) {
 		await app.db.update(app.schema.space).set(values).where(eq(app.schema.space.id, id));
-
-		await new Changes().recordChange({
-			entity_id: id,
-			entity_type: 'space',
-			op: 'update',
-			patch: values
-		});
 
 		notify('spaces', 'space:' + id);
 		console.log('updated space');
@@ -88,8 +61,7 @@ export class Spaces {
 		return row;
 	}
 	async getSpaces() {
-		const spaces = await app.db.select().from(app.schema.space);
-		return spaces;
+		return await app.db.select().from(app.schema.space);
 	}
 
 	async getSpaceById(id: string) {

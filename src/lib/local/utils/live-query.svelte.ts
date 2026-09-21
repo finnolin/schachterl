@@ -12,7 +12,7 @@ export class LiveQuery<T> {
 		this.#run = run;
 		this.#subscribe = createSubscriber(() => {
 			this.refetch();
-			const unsub = subscribeToKeys(keys, () => this.refetch());
+			const unsub = subscribeToKeys([...keys, 'powersync'], () => this.refetch());
 			return unsub; // cleanup when no effect reads this anymore
 		});
 	}

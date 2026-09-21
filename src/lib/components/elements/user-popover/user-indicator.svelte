@@ -9,7 +9,7 @@
 	import { sync_client } from '#lib/local/sync/index.js';
 	import Button from '#lib/components/ui/button/button.svelte';
 	import { type HTMLBaseAttributes } from 'svelte/elements';
-	import { local_db } from '#lib/local/db/index.js';
+	import { local_db, power_sync_db } from '#lib/local/db/index.js';
 
 	let { class: class_name, ...rest_props }: WithElementRef<HTMLBaseAttributes> = $props();
 
@@ -21,6 +21,14 @@
 	}
 	async function pull() {
 		await sync_client.pull();
+	}
+
+	async function clearLocalDatabase() {
+		if (!window.confirm('Clear the entire local database? This cannot be undone.')) return;
+
+		await power_sync_db?.disconnectAndClear();
+		await local_db.destroy();
+		window.location.reload();
 	}
 </script>
 
@@ -64,11 +72,12 @@
 		</div>
 		<div class="flex flex-col gap-2">
 			<Button href="/app/admin" variant="outline">Admin</Button>
-			{#if auth.session}
+			<Button variant="destructive" onclick={clearLocalDatabase}>Clear local database</Button>
+			{#if auth.session || auth.user || store.remote_user_id}
 				<Button
 					onclick={() => {
 						auth.logout();
-					}}>Logout</Button>
+					}}>{auth.session ? 'Logout' : 'Clear local session'}</Button>
 			{/if}
 		</div>
 		<Separator />

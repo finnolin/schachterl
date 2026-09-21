@@ -28,7 +28,30 @@ export class WebPowerSyncConnector implements PowerSyncBackendConnector {
 		};
 	}
 
-	async uploadData(_database: CommonPowerSyncDatabase): Promise<void> {
-		throw new Error('PowerSync upload endpoint is not implemented yet');
+	async uploadData(database: CommonPowerSyncDatabase): Promise<void> {
+		for await (const transaction of database.getCrudTransactions()) {
+			const response = await fetch(new URL('/api/v2/sync/upload', this.server_url), {
+				method: 'POST',
+				credentials: 'include',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({
+					batch: transaction.crud.map(({ op, table, id, opData }) => ({
+						op,
+						table,
+						id,
+						...(opData === undefined ? {} : { data: opData })
+					}))
+				})
+			});
+
+			if (!response.ok) {
+				const error = await response.text();
+				throw new Error(`PowerSync upload failed (${response.status}): ${error}`);
+			}
+
+			await transaction.complete();
+		}
 	}
 }

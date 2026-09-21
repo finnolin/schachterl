@@ -84,18 +84,28 @@ class Auth {
 
 	async validateSession() {
 		if (!this.client) return;
-		const session = await this.client.getSession();
-		log.auth.debug('session:', session);
-		if (session.error || !session.data) {
-			log.auth.debug('No session');
-			this.session = null;
-			await this.validateUser();
-			return;
-		}
-		this.session = session.data;
 
-		log.auth.debug('Session OK!');
-		await this.validateUser();
+		try {
+			const session = await this.client.getSession();
+
+			log.auth.debug('session:', session);
+
+			if (session.error || !session.data) {
+				log.auth.debug('No session');
+				this.session = null;
+				await this.validateUser();
+				return;
+			}
+
+			this.session = session.data;
+			log.auth.debug('Session OK!');
+			await this.validateUser();
+		} catch (error) {
+			log.auth.error('Could not validate session', error);
+
+			// The server may be unavailable. Avoid treating that automatically
+			// as a valid "logged out" response unless that is intentional.
+		}
 	}
 
 	private async validateUser() {
@@ -152,17 +162,38 @@ class Auth {
 
 	async logout() {
 		log.auth.info('Logging out...');
-		await this.powersync?.disconnect();
-		this.powersync = null;
-		const result = await this.client?.signOut();
-		if (result?.data?.success) {
-			log.auth.debug('Logout successful.');
-			store.clearProperty('user_id');
-			store.clearProperty('bearer_token');
-			await db.destroy();
-			await this.validateSession();
-		} else {
-			throw new Error('There was a problem logging out.');
+
+		try {
+			await this.client?.signOut();
+			log.auth.debug('Remote logout completed.');
+		} catch (error) {
+			// A remote logout can fail when the server is unavailable. Local
+			// credentials must still be cleared in that case.
+			log.auth.warn('Remote logout failed; continuing with local logout.', error);
+		} finally {
+			try {
+				await this.powersync?.disconnect();
+			} catch (error) {
+				log.auth.warn('Could not disconnect PowerSync during logout.', error);
+			}
+			this.powersync = null;
+
+			await Promise.allSettled([
+				store.clearProperty('remote_user_id'),
+				store.clearProperty('bearer_token')
+			]);
+
+			this.session = null;
+			this.user = null;
+			this.role = 'user';
+
+			try {
+				await db.destroy();
+			} catch (error) {
+				log.auth.warn('Could not destroy the local database during logout.', error);
+			}
+
+			await goto(resolve('auth/login'));
 		}
 	}
 

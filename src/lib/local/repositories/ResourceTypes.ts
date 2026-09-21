@@ -1,5 +1,4 @@
 import { app_context as app } from '../app/app-context.svelte';
-import { Changes } from './Changes';
 import { notify } from '../utils/invalidation';
 import {
 	space,
@@ -65,13 +64,6 @@ export class ResourcesTypes {
 			})
 			.returning();
 
-		await new Changes().recordChange({
-			entity_id: resource_type.id,
-			entity_type: 'resource_type',
-			op: 'create',
-			patch: resource_type
-		});
-
 		notify('resource_types', 'spaces');
 		return resource_type;
 	}
@@ -99,13 +91,6 @@ export class ResourcesTypes {
 			.where(eq(this.schema.resource_type.id, id))
 			.returning();
 
-		await new Changes().recordChange({
-			entity_id: id,
-			entity_type: 'resource_type',
-			op: 'update',
-			patch: { ...patch }
-		});
-
 		notify('resource_types');
 		return updated;
 	}
@@ -116,13 +101,6 @@ export class ResourcesTypes {
 			.insert(this.schema.space_resource_type)
 			.values({ space_id, resource_type_id })
 			.returning();
-
-		await new Changes().recordChange({
-			entity_id: space_resource_type.id,
-			entity_type: 'space_resource_type',
-			op: 'create',
-			patch: space_resource_type
-		});
 
 		notify('spaces', 'resource_types');
 		return [space_resource_type] as const;
@@ -154,13 +132,6 @@ export class ResourcesTypes {
 		await db
 			.delete(this.schema.space_resource_type)
 			.where(eq(this.schema.space_resource_type.id, space_resource_type.id));
-
-		await new Changes().recordChange({
-			entity_id: space_resource_type.id,
-			entity_type: 'space_resource_type',
-			op: 'delete',
-			patch: {}
-		});
 
 		notify(`space:${space_id}`);
 	}

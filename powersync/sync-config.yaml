@@ -3,7 +3,7 @@ config:
 
 streams:
   user_data:
-    auto_subscribe: true
+    auto_subscribe: false
     queries:
       # Users are globally readable because users can create spaces and invite
       # existing users by ID/email. Write authorization still belongs to the
@@ -25,48 +25,48 @@ streams:
 
       # Spaces the authenticated user belongs to.
       - |
-        SELECT s.*
-        FROM space s
-        INNER JOIN space_user su ON su.space_id = s.id
-        WHERE su.user_id = auth.user_id()
+        SELECT space.*
+        FROM space
+        INNER JOIN space_user ON space_user.space_id = space.id
+        WHERE space_user.user_id = auth.user_id()
 
       # All memberships for spaces the authenticated user belongs to. This
       # includes the other members needed for space member lists and invites.
       - |
-        SELECT members.*
-        FROM space_user members
-        INNER JOIN space_user access
-          ON access.space_id = members.space_id
+        SELECT space_user.*
+        FROM space_user
+        INNER JOIN space_user AS access
+          ON access.space_id = space_user.space_id
         WHERE access.user_id = auth.user_id()
 
       # Resource types enabled for spaces the authenticated user belongs to.
       - |
-        SELECT srt.*
-        FROM space_resource_type srt
-        INNER JOIN space_user access
-          ON access.space_id = srt.space_id
+        SELECT space_resource_type.*
+        FROM space_resource_type
+        INNER JOIN space_user AS access
+          ON access.space_id = space_resource_type.space_id
         WHERE access.user_id = auth.user_id()
 
       # Resources in spaces the authenticated user belongs to.
       - |
-        SELECT r.*
-        FROM resource r
-        INNER JOIN space_user access
-          ON access.space_id = r.space_id
+        SELECT resource.*
+        FROM resource
+        INNER JOIN space_user AS access
+          ON access.space_id = resource.space_id
         WHERE access.user_id = auth.user_id()
 
       # Media in spaces the authenticated user belongs to.
       - |
-        SELECT m.*
-        FROM media m
-        INNER JOIN space_user access
-          ON access.space_id = m.space_id
+        SELECT media.*
+        FROM media
+        INNER JOIN space_user AS access
+          ON access.space_id = media.space_id
         WHERE access.user_id = auth.user_id()
 
       # Relationships in spaces the authenticated user belongs to.
       - |
-        SELECT rel.*
-        FROM relationship rel
-        INNER JOIN space_user access
-          ON access.space_id = rel.space_id
+        SELECT relationship.*
+        FROM relationship
+        INNER JOIN space_user AS access
+          ON access.space_id = relationship.space_id
         WHERE access.user_id = auth.user_id()

@@ -1,4 +1,3 @@
-import { Changes } from './Changes';
 import { type ResourceInsert, type Resource } from '../db/schema';
 import { app_context as app } from '../app/app-context.svelte';
 import { eq, and, isNull, asc, desc, type SQL } from 'drizzle-orm';
@@ -53,12 +52,6 @@ export class Resources {
 			sort_order: generateJitteredKeyBetween(last, null)
 		};
 		const [row] = await db.insert(this.schema.resource).values(insert).returning();
-		await new Changes().recordChange({
-			entity_id: row.id,
-			entity_type: 'resource',
-			op: 'create',
-			patch: row
-		});
 		notify('resources', `resource.space_id:${values.space_id}`);
 		return row;
 	}
@@ -66,24 +59,12 @@ export class Resources {
 	async updateResource(id: string, space_id: string, values: Partial<ResourceInsert>) {
 		const db = app.db;
 		await db.update(this.schema.resource).set(values).where(eq(this.schema.resource.id, id));
-		await new Changes().recordChange({
-			entity_id: id,
-			entity_type: 'resource',
-			op: 'update',
-			patch: values
-		});
 		notify('resource', `resource.space_id:${space_id}`);
 	}
 
 	async deleteResource(id: string, space_id: string) {
 		const db = app.db;
 		await db.delete(this.schema.resource).where(eq(this.schema.resource.id, id));
-		await new Changes().recordChange({
-			entity_id: id,
-			entity_type: 'resource',
-			op: 'delete',
-			patch: {}
-		});
 		//notify('resource', `resource.space_id:${space_id}`);
 	}
 

@@ -57,7 +57,11 @@ function createPowerSyncDatabase(user_id: string): LocalPowerSyncDb {
 	}
 
 	return new PowerSyncDatabase({
-		database,
+		database: {
+			...database,
+			useWebWorker: true,
+			enableMultiTabs: true
+		},
 		schema: power_sync_schema
 	});
 }

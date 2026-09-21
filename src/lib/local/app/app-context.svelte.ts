@@ -96,7 +96,7 @@ export class AppContext {
 
 			this.setBootStep(3, 'Opening database...');
 			await this.Database.initialize();
-			void auth.validateSession();
+			await auth.validateSession();
 		}
 		//await sidebar.initialize();
 
@@ -106,6 +106,9 @@ export class AppContext {
 		// e.g. returning from the server-selection page after choosing 'local'
 		if (page.url.pathname === resolve('settings/server')) {
 			goto(resolve('/'));
+		}
+		if (page.url.pathname === resolve('/')) {
+			goto(resolve('/app'));
 		}
 	}
 

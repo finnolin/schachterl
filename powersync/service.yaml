@@ -22,4 +22,4 @@ client_auth:
         alg: RS256
         kid: dev-key-1
         e: 'AQAB'
-        n: 'qxms1ecf5ft8lRyeTCj0dv0QUnyUfdEYfzCNHGDOMNPBfkrv4tYePhkVvPDiktcu95Mp0t8NukmYB5gBA6vk2b_KQLAd-wJU9DCjXiUkp1JHa4G2FBaXjIPhblsVT2bhUihz_YDu739Snx1Od12R5SoTXSnr5PvlfSpSdmc6f8syzDhGfQ9_nkB9TEnLDfkYFgvnR_TpbLxxL2WCLmUFFBjxCYE9QwRl1fudYlGFu3H-kG90wbPcHvRlKnsn4bu8MBWwJQTaxJk4RkgfTtPxZphTY7-9-mumaFZ2adUjgXnGA6lMa0qsxw4eocRpyJgsgsR7uKWgEsnbcvNsDH2How'
+        n: 'v-4vWnXgzOKjOm9O8_FVjVGnzcQik0VbcG8vkAiBIATaqXCwHxTuchgxUVEX0gt1Aj1xGWj4uoiFiGPOVDGOKxnSzfJQRsPvrXx_q2dczxdoLRGMpA3DRMNmQ-ncjQNmy6nmo3xB3zGHJtjsJJisGCC0RcDisbrcWv1cMJ1OW5dbBb2qjgWaUFY3PnjBFXeu-47hI1yxinTXCii7ostjZ7TikPuhuRWbXLMLtIY-_4mx95Ndr-bXDEZyorqQ3DS8pMIsYQxJeXYvsM7uj5XFehycvaVAKxS1aPbHYnHNP_7aPRj-RpYuBKKbVhvYaHfOcYqJAwodRhFKGKV03D2FfQ'

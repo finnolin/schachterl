@@ -3,6 +3,8 @@ import { PowerSyncDatabase } from '@powersync/web';
 import { PowerSyncTauriDatabase } from '@powersync/tauri-plugin';
 import type { LocalPowerSyncDb } from '#lib/local/db/index.js';
 import { WebPowerSyncConnector } from './powersync-connector.js';
+import { notify } from '#lib/local/utils/invalidation.js';
+import type { SyncStreamSubscription } from '@powersync/common';
 
 export type BetterAuthTokenProvider = () => Promise<string>;
 
@@ -14,12 +16,15 @@ export type BetterAuthTokenProvider = () => Promise<string>;
  */
 export class PowerSyncService {
 	private connected = false;
+	private user_data_subscription: SyncStreamSubscription | null = null;
 
 	constructor(
 		private readonly database: LocalPowerSyncDb,
 		private readonly server_url: string,
 		private readonly better_auth_token: BetterAuthTokenProvider
-	) {}
+	) {
+		console.log(server_url);
+	}
 
 	async connect() {
 		if (this.connected) return;
@@ -27,11 +32,35 @@ export class PowerSyncService {
 		if (this.database instanceof PowerSyncTauriDatabase) {
 			await invoke('connect_powersync', {
 				handle: this.database.rustHandle,
-				server_url: this.server_url,
-				better_auth_token: await this.better_auth_token()
+				serverUrl: this.server_url,
+				betterAuthToken: await this.better_auth_token()
 			});
 		} else if (this.database instanceof PowerSyncDatabase) {
 			await this.database.connect(new WebPowerSyncConnector(this.server_url));
+		}
+
+		// Subscribe explicitly so web and Tauri use the same readiness and
+		// lifecycle path. The stream is not auto-subscribed in the service config.
+		this.user_data_subscription = await this.database.syncStream('user_data').subscribe();
+
+		// LiveQuery currently uses Drizzle for reads. Watch each domain table
+		// through PowerSync and invalidate those reads when local or remote data
+		// is applied. Separate simple queries are more portable across the web
+		// and native SQLite adapters than one query with nested aggregates.
+		for (const table of [
+			'user',
+			'space',
+			'space_user',
+			'space_resource_type',
+			'resource_type',
+			'resource',
+			'media',
+			'relationship_type',
+			'relationship'
+		]) {
+			this.database.watch(`SELECT id FROM ${table}`, [], {
+				onResult: () => notify('powersync')
+			});
 		}
 
 		this.connected = true;
@@ -39,6 +68,9 @@ export class PowerSyncService {
 
 	async disconnect() {
 		if (!this.connected) return;
+
+		await this.user_data_subscription?.unsubscribe();
+		this.user_data_subscription = null;
 
 		if (this.database instanceof PowerSyncTauriDatabase) {
 			await invoke('disconnect_powersync', {
@@ -49,12 +81,6 @@ export class PowerSyncService {
 		}
 
 		this.connected = false;
-	}
-
-	async waitForFirstSync() {
-		if (this.database instanceof PowerSyncDatabase) {
-			await this.database.waitForFirstSync();
-		}
 	}
 
 	get is_connected() {
