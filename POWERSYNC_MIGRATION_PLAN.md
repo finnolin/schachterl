@@ -230,7 +230,7 @@ Keep these in Tauri Store/localStorage or model them as PowerSync local-only tab
 
 ## Phase 3 — Secure and expand Sync Streams
 
-**Status: implemented locally; deployment/validation still pending.**
+**Status: complete.** The configuration has been validated in the deployed runtime, including PostgreSQL replication, membership-scoped streams, and system-user exclusion.
 
 The stream now globally syncs the selected public user columns, resource types, and relationship types, while scoping spaces and space-owned data through `space_user` membership. `resource` and `media` rows are not filtered by `deleted_at`, allowing soft-delete updates to sync.
 
@@ -638,9 +638,9 @@ The client/server legacy REST, SSE, poke, cursor, and change-log implementation 
 
 `PowerSyncTauriDatabase.connect()` is not supported from JavaScript by the installed Tauri SDK. The native connector must be implemented in `src-tauri/` using the Rust PowerSync APIs.
 
-## Sync config still needs service validation
+## Sync config validation
 
-The local `powersync/sync-config.yaml` is now membership-scoped and includes the required tables, but it has not yet been validated/deployed against the authorized PowerSync instance.
+The membership-scoped `powersync/sync-config.yaml` has been validated against the running PowerSync service. PostgreSQL replication, stream results, deployed credentials, system-user exclusion, and client access behavior have been verified.
 
 ## PowerSync does not replace the backend write API
 
@@ -667,7 +667,7 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 # Recommended implementation order
 
-1. ~~Expand and secure `powersync/sync-config.yaml`.~~ Done locally; deployment validation remains.
+1. ~~Expand, secure, deploy, and validate `powersync/sync-config.yaml`.~~ Done.
 2. ~~Define the complete PowerSync schema.~~ Done.
 3. ~~Define the complete Drizzle schema mapping.~~ Done.
 4. [x] Add Better Auth → PowerSync credential issuance.
@@ -689,13 +689,13 @@ If using tombstones, ensure the sync streams include them long enough for client
 
 ## Local database
 
-- [ ] Web opens PowerSync SQLite successfully in a runtime test.
-- [ ] Tauri opens PowerSync SQLite successfully in a runtime test.
+- [x] Web opens PowerSync SQLite successfully in a runtime test.
+- [x] Tauri opens PowerSync SQLite successfully in a runtime test.
 - [x] Active `DatabaseService` no longer calls `@tauri-apps/plugin-sql`.
 - [x] Active `DatabaseService` no longer calls SQLocal.
 - [x] No custom migration runner is needed for the PowerSync database.
 - [x] Per-user database filenames are retained.
-- [ ] Database data cannot leak between users in a runtime user-switch test.
+- [x] Database data cannot leak between users in a runtime user-switch test.
 
 ## Authentication
 
@@ -704,27 +704,27 @@ If using tombstones, ensure the sync streams include them long enough for client
 - [x] PowerSync token audience matches service config.
 - [x] Token expiry is short-lived.
 - [x] Logout clears/disconnects local PowerSync data.
-- [ ] User switching cannot expose previous user data.
+- [x] User switching cannot expose previous user data.
 
 ## Download sync
 
 - [x] All required domain tables are in the local PowerSync schema.
 - [x] All required domain tables are represented in Sync Streams.
 - [x] Stream queries use global/public or membership-scoped access as designed.
-- [ ] PowerSync service sees the PostgreSQL publication in a runtime deployment.
-- [ ] Initial sync completes.
-- [ ] Deletes/tombstones behave correctly.
+- [x] PowerSync service sees the PostgreSQL publication in a runtime deployment.
+- [x] Initial sync completes.
+- [x] Deletes/tombstones behave correctly.
 
 ## Upload sync
 
-- [ ] Local inserts reach the upload endpoint.
-- [ ] Local patches reach PostgreSQL.
-- [ ] Local deletes follow the soft-delete policy.
-- [ ] Upload endpoint authorizes every operation.
-- [ ] Unknown tables/columns are safely rejected.
-- [ ] Transient failures return 5xx.
-- [ ] Validation failures do not permanently block the queue.
-- [ ] `transaction.complete()` is called after successful commits.
+- [x] Local inserts reach the upload endpoint.
+- [x] Local patches reach PostgreSQL.
+- [x] Local deletes follow the soft-delete policy.
+- [x] Upload endpoint authorizes every operation.
+- [x] Unknown tables/columns are safely rejected.
+- [x] Transient failures return 5xx.
+- [x] Validation failures do not permanently block the queue.
+- [x] `transaction.complete()` is called after successful commits.
 
 ## Reactivity
 

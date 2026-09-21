@@ -51,6 +51,13 @@ export class WebPowerSyncConnector implements PowerSyncBackendConnector {
 				throw new Error(`PowerSync upload failed (${response.status}): ${error}`);
 			}
 
+			const result = (await response.json()) as {
+				rejected?: Array<{ id: string; table: string; op: string; reason: string }>;
+			};
+			if (result.rejected?.length) {
+				console.warn('[PowerSync] rejected upload operations', result.rejected);
+			}
+
 			await transaction.complete();
 		}
 	}

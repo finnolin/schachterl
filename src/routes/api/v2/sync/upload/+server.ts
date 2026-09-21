@@ -282,20 +282,37 @@ export async function POST({ request, locals }) {
 		);
 	}
 
-	try {
-		await db.transaction(async (tx) => {
-			for (const operation of parsed.batch) {
-				await applyOperation(tx, operation, user_id, user_role);
-			}
-		});
-	} catch (error) {
-		if (error instanceof UploadValidationError) {
-			return Response.json({ error: error.message }, { status: 400 });
-		}
+	const accepted: string[] = [];
+	const rejected: Array<{
+		id: string;
+		table: TableName;
+		op: UploadOperation['op'];
+		reason: string;
+	}> = [];
 
-		console.error('PowerSync upload failed', error);
-		return Response.json({ error: 'PowerSync upload failed' }, { status: 500 });
+	for (const operation of parsed.batch) {
+		try {
+			await db.transaction(async (tx) => {
+				await applyOperation(tx, operation, user_id, user_role);
+			});
+			accepted.push(operation.id);
+		} catch (error) {
+			if (error instanceof UploadValidationError) {
+				// This operation is permanently rejected. Return 2xx so PowerSync
+				// can complete the transaction instead of retrying it forever.
+				rejected.push({
+					id: operation.id,
+					table: operation.table,
+					op: operation.op,
+					reason: error.message
+				});
+				continue;
+			}
+
+			console.error('PowerSync upload failed', error);
+			return Response.json({ error: 'PowerSync upload failed' }, { status: 500 });
+		}
 	}
 
-	return Response.json({ ok: true });
+	return Response.json({ ok: true, accepted, rejected });
 }
