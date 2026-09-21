@@ -1,7 +1,6 @@
 import { local_db, DatabaseService } from '#lib/local/db/index.js';
 import type { LocalDrizzleDb } from '#lib/local/db/index.js';
 import log from '#lib/logger.svelte.js';
-import { eq } from 'drizzle-orm';
 import { isTauri } from '@tauri-apps/api/core';
 import * as schema from '#lib/local/db/schema.js';
 import { store } from '#lib/local/app/store.svelte.js';
@@ -64,7 +63,7 @@ export class AppContext {
 	private setBootStep(step: number, label: string) {
 		this.boot_step = step;
 		this.boot_label = label;
-		log.app.debug(`Boot step ${step}/${this.boot_total_steps}: ${label}`);
+		log.app.info(`Boot step ${step}/${this.boot_total_steps}: ${label}`);
 	}
 
 	async initialize() {
@@ -87,7 +86,6 @@ export class AppContext {
 			this.setBootStep(2, 'Connecting to server...');
 			auth.createClient(sync_connection.endpoint);
 			const cached_user = await store.getProperty('remote_user_id');
-			console.log(cached_user);
 			if (!cached_user) {
 				console.log('navigating to auth');
 				goto(resolve('auth/login'));
@@ -138,33 +136,6 @@ export class AppContext {
 		if (!isTauri()) return;
 		await store.clearProperty('sync_connection_target');
 		await store.clearProperty('server_url');
-	}
-
-	async getAppMeta(property_name: string) {
-		if (!this.drizzle_db) return;
-		const [property] = await this.drizzle_db
-			.select()
-			.from(schema.app_meta)
-			.where(eq(schema.app_meta.key, property_name));
-		if (property && property.value) {
-			return property.value;
-		} else {
-			return;
-		}
-	}
-
-	async setAppMeta(property_key: string, property_value: string) {
-		if (!this.drizzle_db) return;
-		await this.deleteAppMeta(property_key);
-		await this.drizzle_db
-			.insert(schema.app_meta)
-			.values({ key: property_key, value: property_value });
-		log.app.info('Set Meta: ' + property_key + ' / ' + property_value);
-	}
-
-	async deleteAppMeta(property_key: string) {
-		if (!this.drizzle_db) return;
-		await this.drizzle_db.delete(schema.app_meta).where(eq(schema.app_meta.key, property_key));
 	}
 
 	setDb(db: LocalDrizzleDb) {

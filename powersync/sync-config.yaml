@@ -11,6 +11,7 @@ streams:
       - |
         SELECT id, name, created_at
         FROM "user"
+        WHERE id <> '00000000-0000-0000-0000-000000000000'
 
       # Resource types are globally readable reference data. They may be
       # assigned to spaces through space_resource_type.
@@ -38,6 +39,7 @@ streams:
         INNER JOIN space_user AS access
           ON access.space_id = space_user.space_id
         WHERE access.user_id = auth.user_id()
+          AND space_user.user_id <> '00000000-0000-0000-0000-000000000000'
 
       # Resource types enabled for spaces the authenticated user belongs to.
       - |

@@ -1,8 +1,6 @@
 import { db, schema } from '.';
-import { Changes, type Change } from '../repositories/changes';
 import { eq } from 'drizzle-orm';
 import * as IDs from '#lib/local/utils/ids.js';
-import { type BUILTIN_RESOURCE_TYPES } from '#lib/local/utils/ids.js';
 
 export async function seedSystemUser() {
 	await db
@@ -12,15 +10,13 @@ export async function seedSystemUser() {
 			name: 'System',
 			email: 'system@localhost', // must satisfy notNull; never used for auth
 			email_verified: false,
-			role: 'admin', // so its changes pass the admin gate naturally
+			role: 'admin',
 			created_at: new Date()
 		})
 		.onConflictDoNothing({ target: schema.user.id });
 }
 
 export async function seedBuiltins() {
-	const changes = new Changes();
-
 	for (const type of IDs.BUILTIN_RESOURCE_TYPES) {
 		const [existing] = await db
 			.select({ id: schema.resource_type.id })
@@ -30,18 +26,13 @@ export async function seedBuiltins() {
 
 		if (existing) continue;
 
-		const change: Change = {
-			id: crypto.randomUUID(),
-			entity_type: 'resource_type',
-			entity_id: type.id,
-			op: 'create',
-			patch: type,
-			base_version: 0,
-			created_at: new Date()
-		};
-
-		await db.transaction((tx) =>
-			changes.insertChange(tx, change, IDs.SYSTEM_USER_ID, IDs.SYSTEM_CLIENT_ID, 'admin')
-		);
+		await db.insert(schema.resource_type).values({
+			id: type.id,
+			key: type.key,
+			singular: type.singular,
+			plural: type.plural,
+			icon: type.icon,
+			field_config: [...type.field_config]
+		});
 	}
 }

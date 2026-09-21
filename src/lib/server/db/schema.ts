@@ -83,29 +83,6 @@ export const verification = pgTable('verification', {
 		.$onUpdateFn(() => new Date())
 });
 
-export const enum_change_operation = pgEnum('change_operation', ['create', 'update', 'delete']);
-export const change = pgTable('change', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	seq: integer('seq').notNull().generatedAlwaysAsIdentity({
-		name: 'change_seq',
-		startWith: 1,
-		increment: 1
-	}),
-	space_id: uuid('space_id'),
-	target_user_id: uuid('target_user_id'),
-	entity_type: text('entity_type').notNull(),
-	entity_id: uuid('entity_id').notNull(),
-
-	op: enum_change_operation().notNull(),
-	patch: jsonb('patch').$type<Record<string, unknown>>(),
-
-	user_id: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
-	client_id: uuid('client_id').notNull(),
-	created_at: timestamp('created_at', { withTimezone: true }).$defaultFn(() => new Date()),
-	base_version: integer('base_version').notNull()
-});
-export type Change = typeof change.$inferSelect;
-
 export const resource_type = pgTable('resource_type', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	key: text('key').notNull().unique(),

@@ -20,47 +20,6 @@ export const drizzle_migrations = sqliteTable('__drizzle_migrations', {
 });
 export type Migration = typeof drizzle_migrations.$inferSelect;
 
-export const app_meta = sqliteTable('app_meta', {
-	key: text('key').primaryKey(),
-	value: text('value').notNull()
-});
-export type AppMeta = typeof resource.$inferSelect;
-export type AppMetaInsert = typeof resource.$inferInsert;
-
-export const enum_synced_tables = [
-	'resource_type',
-	'resource',
-	'user',
-	'space',
-	'space_user',
-	'space_resource_type',
-	'relationship_type',
-	'relationship',
-	'media'
-] as const;
-
-export type EnumSycnedTables = (typeof enum_synced_tables)[number];
-export const change = sqliteTable('change', {
-	seq: integer('seq').primaryKey({ autoIncrement: true }),
-	id: text('id')
-		.notNull()
-		.unique()
-		.$defaultFn(() => uuid()),
-	entity_type: text({ enum: enum_synced_tables }).notNull(),
-	entity_id: text('entity_id').notNull(),
-	op: text('op', { enum: ['create', 'update', 'delete'] }).notNull(),
-	patch: text('patch', { mode: 'json' }).$type<Record<string, unknown>>(),
-	created_at: text('created_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	synced: integer('synced', { mode: 'boolean' }).notNull().default(false),
-	in_flight: integer('in_flight', { mode: 'boolean' }).notNull().default(false),
-	base_version: integer('base_version').notNull().default(0)
-});
-
-export type Change = typeof change.$inferSelect;
-export type ChangeInsert = typeof change.$inferInsert;
-
 export const user = sqliteTable('user', {
 	id: text('id')
 		.primaryKey()

@@ -1,12 +1,10 @@
 <script lang="ts">
 	import * as Popover from '#lib/components/ui/popover/index.js';
 	import * as Avatar from '#lib/components/ui/avatar/index.js';
-	import { server_connection } from '#lib/local/sync/poke-client.svelte.js';
 	import { auth } from '#lib/local/auth/auth.svelte.js';
 	import { cn, type WithElementRef } from '#lib/utils.js';
 	import Separator from '#lib/components/ui/separator/separator.svelte';
 	import { store } from '#lib/local/app/store.svelte.js';
-	import { sync_client } from '#lib/local/sync/index.js';
 	import Button from '#lib/components/ui/button/button.svelte';
 	import { type HTMLBaseAttributes } from 'svelte/elements';
 	import { local_db, power_sync_db } from '#lib/local/db/index.js';
@@ -15,13 +13,6 @@
 
 	//Icons:
 	import UserIcon from '~icons/tabler/user-circle';
-
-	async function push() {
-		await sync_client.push();
-	}
-	async function pull() {
-		await sync_client.pull();
-	}
 
 	async function clearLocalDatabase() {
 		if (!window.confirm('Clear the entire local database? This cannot be undone.')) return;
@@ -44,7 +35,7 @@
 
 			<div
 				class={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${
-					server_connection.connected ? 'bg-green-500' : 'bg-red-500'
+					auth.session ? 'bg-green-500' : 'bg-red-500'
 				}`}>
 			</div>
 		</div>
@@ -82,19 +73,9 @@
 		</div>
 		<Separator />
 
-		{#if server_connection.connected}
+		{#if auth.session}
 			<div class="text-xs">Server: connected</div>
-			<div class="flex flex-row items-center justify-between">
-				<div class="text-sm">
-					{store.sync_connection_target}
-				</div>
-				<div class="flex flex-row items-center justify-end gap-1">
-					{#if auth.session}
-						<Button variant="outline" size="sm" class="h-5" onclick={push}>Push</Button>
-						<Button variant="outline" size="sm" class="h-5" onclick={pull}>Pull</Button>
-					{/if}
-				</div>
-			</div>
+			<div class="text-sm">{store.sync_connection_target}</div>
 		{:else}
 			<div class="text-xs">Server: not connected</div>
 			<Button href="/settings/server" variant="outline">Server Settings</Button>

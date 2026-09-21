@@ -7,7 +7,7 @@ import * as tables from '#lib/server/db/schema.js';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { PUBLIC_BASE_URL } from '$app/env/public';
-import { SYSTEM_CLIENT_ID, SYSTEM_USER_ID } from '#lib/local/utils/ids.js';
+import { SYSTEM_USER_ID } from '#lib/local/utils/ids.js';
 
 export const auth = betterAuth({
 	baseURL: PUBLIC_BASE_URL!,
@@ -110,18 +110,6 @@ export const auth = betterAuth({
 					if (count === 1) {
 						await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, user.id));
 					}
-					await db.insert(schema.change).values({
-						id: crypto.randomUUID(),
-						entity_type: 'user',
-						entity_id: user.id,
-						op: 'create',
-						patch: user,
-						space_id: null,
-						target_user_id: user.id,
-						user_id: user.id,
-						client_id: SYSTEM_CLIENT_ID,
-						base_version: 0
-					});
 				}
 			}
 		},

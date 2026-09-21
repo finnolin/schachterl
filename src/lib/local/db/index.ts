@@ -26,9 +26,7 @@ const power_sync_schema = new DrizzleAppSchema({
 	resource: schema.resource,
 	media: schema.media,
 	relationship_type: schema.relationship_type,
-	relationship: schema.relationship,
-	app_meta: { tableDefinition: schema.app_meta, options: { localOnly: true } },
-	change: { tableDefinition: schema.change, options: { localOnly: true } }
+	relationship: schema.relationship
 });
 
 export type LocalDrizzleDb = PowerSyncSQLiteDatabase<typeof relations>;
